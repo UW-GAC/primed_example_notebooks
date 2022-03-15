@@ -1,0 +1,124 @@
+---
+title: "PRIMED example notebook: PLINK files"
+output: html_notebook
+---
+
+# Import data to workspace: PLINK example
+
+We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. In this notebook, we import the data from these files into data tables.
+
+## Install and load R packages
+
+```{r}
+# get the latest version of AnVIL from github
+#remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
+library(AnVIL)
+library(tidyverse)
+```
+
+## Files in workspace
+
+To see what files are available in this workspace, we need the google bucket ID, which is returned by the `avbucket` function.
+
+```{r}
+(bucket <- avbucket())
+gsutil_ls(bucket)
+```
+
+To read from a google bucket, we use the `gsutil_pipe` function. We need to specify `"rb"` as "read from binary".
+
+```{r}
+prefix <- "hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M"
+famfile <- paste0(bucket, "/", prefix, ".fam")
+famfile %in% gsutil_ls(bucket)
+fampipe <- gsutil_pipe(famfile, "rb")
+fam <- read_table(fampipe, col_names=c("family", "indiv", "father", "mother", "sex", "phen"), col_types="cccccc")
+head(fam)
+```
+
+## Populate data model
+
+### Sample and subject tables
+
+Create subject table
+
+```{r}
+subj <- fam %>%
+    mutate(reported_sex=c("1"="M", "2"="F")[sex]) %>%
+    select(subject_id=indiv, reported_sex) %>%
+    mutate(consent_code="NRUP",
+          study_nickname="HapMap",
+          dbgap_submission=FALSE)
+head(subj)
+```
+
+Create sample table. In this example we use the same identifiers for subject and sample, but different values for each are preferred.
+
+```{r}
+samp <- fam %>%
+    select(sample_id=indiv) %>%
+    mutate(subject_id=sample_id,
+           tissue_source="cell line",
+           dataset_type="array")
+head(samp)
+```
+
+Write subject and sample data tables to workspace.
+
+```{r}
+avtable_import(subj, entity="subject_id")
+avtable_import(samp, entity="sample_id")
+```
+
+Check that the data tables imported correctly.
+
+```{r}
+avtables()
+```
+
+### Sample sets
+
+Define sample set to link to genotype data. In this case, there is one set with all samples. In some studies, there may be multiple arrays or data types with different sets of samples associated with each. In that case, the sample_set table would have multiple rows.
+
+The `avtable_import_set` function takes a data.frame or tibble as input. The `origin` argument refers to the name of the existing workspace table from which to make the set. The `set` argument refers to the column in the input data.frame used to define the sets. In this case, we have one column with the same value for every sample, so they are all included in the set. The `member` argument refers to the column containing identifiers in the origin table.
+
+```{r}
+samp %>%
+    mutate(set="all") %>%
+    avtable_import_set(origin="sample", set="set", member="sample_id")
+```
+
+```{r}
+samp[1:100,] %>%
+    mutate(set="array1") %>%
+    avtable_import_set(origin="sample", set="set", member="sample_id")
+```
+
+```{r}
+avtables()
+sets <- avtable("sample_set")
+names(sets)
+lapply(sets, class)
+sets$sample_set_id
+lapply(sets$samples.items, class)
+lapply(sets$samples.items, names)
+lapply(sets$samples.items, head)
+lapply(sets$samples.items, nrow)
+```
+
+### Array data
+
+Metadata describing the array is stored in the array_dataset table.
+
+```{r}
+array <- tibble(
+    dataset_id="dataset1",
+    sample_set_id="all",
+    genotyping_center="Wellcome Trust Sanger Institute",
+    array_manufacturer="Illumina",
+    array_name="Human 1M",
+    genotype_calling_software="BeadStudio",
+    reference_genome_build="GRCh37"
+)
+avtable_import(array, entity="dataset_id")
+```
