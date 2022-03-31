@@ -164,7 +164,7 @@ anvil_import_table(subject, table_name="subject", model, overwrite=TRUE)
 anvil_import_table(sample, table_name="sample", model, overwrite=TRUE)
 ```
 
-Importing the sample_set table requires a dedication function, as AnVIL creates a link between the original table and the set table.
+Importing the sample_set table requires a dedicated function, as AnVIL creates a link between the original table and the set table.
 
 ```{r}
 anvil_import_set(sample_set, table_name="sample_set", overwrite=TRUE)
