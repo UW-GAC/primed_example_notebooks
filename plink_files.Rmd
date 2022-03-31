@@ -146,3 +146,11 @@ check_column_names(tables, model)
 ```{r}
 check_column_types(tables, model)
 ```
+
+```{r}
+check_primary_keys(tables, model)
+```
+
+```{r}
+check_foreign_keys(tables, model)
+```
