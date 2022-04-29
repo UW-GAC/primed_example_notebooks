@@ -1,8 +1,0 @@
----
----
-
-@import "{{ site.theme }}";
-
-h1, a {
-  color: #008eb2;
-}
