@@ -12,9 +12,13 @@ In this notebook we will import 1000 Genomes data into data tables, using the Bi
 ```{r}
 # get the latest version of AnVIL from github
 #remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
+#remotes::install_github("UW-GAC/AnvilDataModels")
 library(AnVIL)
+library(AnvilDataModels)
 library(tidyverse)
 ```
+
+## Source data
 
 We are going to import data from another (open-access) AnVIL workspace.
 
@@ -27,43 +31,53 @@ avtables(namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
 We import the "sample" table as a tibble:
 
 ```{r}
-samp <- avtable("sample", namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
-head(samp)
+sample <- avtable("sample", namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
+head(sample)
 ```
+
+## Prepare tables according to data model
+
+### Sample and subject tables
 
 All phenotypes were simulated for the purposes of the GWAS tutorial in the origin workspace. In PRIMED (as in dbGaP and other AnVIL consortia) we distinguish between subjects (participants in a study) and samples (e.g. blood sample for genotyping). Multiple samples may be associated with the same subject. All of the data in this table more appropriately belongs in the subject table. In the PRIMED data model, we will actually have multiple tables, with the subject table containing key information like study and consent, and separate phenotype tables for each phenotype domain.
 
 ```{r}
-subj <- samp %>%
+subject <- sample %>%
   rename(subject_id=sample_id, 
          superpopuation=ancestry)
-head(subj)
+head(subject)
 ```
 
-The sample table links samples to subjects and identifies the data type of each sample.
+The sample table links samples to subjects.
 
 ```{r}
-samp <- samp %>%
+sample <- sample %>%
   select(sample_id) %>%
-  mutate(subject_id=sample_id,
-         data_type="sequencing")
-head(samp)
+  mutate(subject_id=sample_id)
+head(sample)
 ```
 
-We now add the subject and sample tables to our workspace.
+### Sample sets
+
+Sample sets define groups of samples and link them to datasets. We will create one set with all samples.
 
 ```{r}
-avworkspace_namespace()
-avworkspace_name()
-avtable_import(subj, entity="subject_id")
-avtable_import(samp, entity="sample_id")
+sample_set <- create_set_all(sample, table_name="sample")
+head(sample_set)
 ```
+
+### Datasets
+
+Each dataset is linked to a sample set, and defines the type of data available. In this case, we have sequencing data.
 
 ```{r}
-avtables()
+dataset <- tibble(dataset_id = "dataset1",
+                  dataset_type = "sequencing",
+                  sample_set_id = "all")
 ```
 
-Now we add data files for these samples. In the source workspace, the paths to the VCF files are stored in a "Workspace data" table.
+Files are linked to datasets. Rather than copying data, we create a 'file' table that references VCF files in their origin workspace.
+In the source workspace, the paths to the VCF files are stored in a "Workspace data" table.
 
 ```{r}
 avdata(namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
@@ -77,6 +91,8 @@ vcf <- avdata(namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2") %>%
 head(vcf)
 ```
 
+The file paths are in a comma-delimited string, so we extract them into a vector.
+
 ```{r}
 vf <- strsplit(vcf, split='\",\"', fixed=TRUE) %>%
   unlist(use.names=FALSE)
@@ -86,11 +102,108 @@ vf <- sub('\"]', '', vf, fixed=TRUE)
 
 vf
 ```
-Extract chromosome from the file name
+
+The primary key of the 'file' table in the PRIMED data model is the md5 hash. As this is not provided by the source workspace, we compute it. We use 'gsutil_pipe' from the AnVIL package to open a connection to the file without copying it to the local instance.
+
+```{r}
+md5 <- sapply(vf, function(f) {
+  gsutil_pipe(f, "rb") %>%
+    openssl::md5() %>%
+    as.character()
+}, USE.NAMES=FALSE)
+
+```
+
+
+
+Extract chromosome from the file name to add to the table.
 
 ```{r}
 chr <- stringr::str_extract(vf, "chr[:alnum:]+[:punct:]")
 chr <- sub("chr", "", chr, fixed=TRUE)
 chr <- sub(".", "", chr, fixed=TRUE)
-vcf <- tibble(chr=chr, file=vf)
+```
+
+```{r}
+file <- tibble(md5 = md5,
+               chr = chr, 
+               filename = vf,
+               dataset_id = "dataset1",
+               description = "VCF files by chromosome")
+```
+
+The 'sequencing_dataset' table contains metadata on the sequencing process.
+
+```{r}
+sequencing <- tibble(
+  dataset_id = "dataset1",
+  reference_genome_build = "GRCh37",
+  analyte_type = "DNA",
+  sequencing_assay = "WGS",
+  date_data_generation = "2013-05-03",
+  seq_platform = "Illumina"
+)
+```
+
+
+## Check tables against data model
+
+Once all tables have been created, we can check that they conform to the data model.
+
+```{r}
+primed_tsv <- "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_data_model_draft.tsv"
+model <- url(primed_tsv) %>%
+  tsv_to_dm()
+model
+```
+
+```{r}
+tables <- list(subject=subject,
+               sample=sample,
+               sample_set=sample_set,
+               dataset=dataset,
+               sequencing_dataset=sequencing,
+               file=file)
+```
+
+```{r}
+check_table_names(tables, model)
+```
+
+```{r}
+check_column_names(tables, model)
+```
+
+```{r}
+check_column_types(tables, model)
+```
+
+```{r}
+check_primary_keys(tables, model)
+```
+
+```{r}
+check_foreign_keys(tables, model)
+```
+
+
+## Add data tables to workspace
+
+Once we have verified that all our tables comply with the data model, we can import them to the workspace. The data model is a required argument to the import functions, as it ensures that the primary keys (also known as 'entity ids' in AnVIL) are created correctly. The `overwrite` argument controls whether to overwrite existing data tables in the workspace.
+
+```{r}
+anvil_import_table(subject, table_name="subject", model, overwrite=TRUE)
+anvil_import_table(sample, table_name="sample", model, overwrite=TRUE)
+```
+
+Importing the sample_set table requires a dedicated function, as AnVIL creates a link between the original table and the set table.
+
+```{r}
+anvil_import_set(sample_set, table_name="sample_set", overwrite=TRUE)
+```
+
+```{r}
+anvil_import_table(dataset, table_name="dataset", model, overwrite=TRUE)
+anvil_import_table(sequencing, table_name="sequencing_dataset", model, overwrite=TRUE)
+anvil_import_table(file, table_name="file", model, overwrite=TRUE)
 ```
