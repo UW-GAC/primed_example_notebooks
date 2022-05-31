@@ -93,45 +93,60 @@ dataset <- tibble(dataset_id = "dataset1",
 Metadata describing the array is stored in the array_dataset table.
 
 ```{r}
-array <- tibble(
+array_dataset <- tibble(
     dataset_id = "dataset1",
     genotyping_center = "Wellcome Trust Sanger Institute",
     array_manufacturer = "Illumina",
     array_name = "Human 1M",
     genotype_calling_software = "BeadStudio",
-    reference_genome_build = "GRCh37"
+    reference_assembly = "GRCh37"
 )
 ```
 
 Files are linked to datasets. The md5 hash of each file is used as the primary key for the 'file' table. This should be computed before uploading to the workspace and checked after upload to make sure the upload was successful.
 
 ```{r}
-files <- paste0(prefix, c(".bed", ".bim", ".fam"))
+files <- paste0(bucket, "/", prefix, c(".bed", ".bim", ".fam"))
 md5 <- c("ec6096edea0d6f46191a0275577b3f02",
          "5a1e4276783afa0a235f907edae1dae3",
          "4d9651bb9e45054dc8ed8c1c59cba19d")
-file <- tibble(md5 = md5,
+file <- tibble(md5sum = md5,
                dataset_id = "dataset1",
-               filename = files,
+               file_path = files,
                description = c("bed", "bim", "fam"))
 ```
 
+
+## Write tables as files to workspace bucket
+
+To test the tables using a workflow, they must be written as files to the workspace bucket.
+
+```{r}
+table_names <- c("subject", "sample", "sample_set", "dataset", "array_dataset", "file")
+for (t in table_names) {
+  outfile <- paste0("HapMap_", t, "_table.tsv")
+  write_tsv(get(t), outfile)
+  gsutil_cp(outfile, bucket)
+}
+```
+
+
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model.
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `data_model_report` workflow. Below we illustrate some of the steps in that workflow.
 
 ```{r}
 primed_tsv <- "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_data_model_draft.tsv"
-model <- url(primed_tsv) %>%
-  tsv_to_dm()
+model <- tsv_to_dm(list(url(primed_tsv)))
 model
 ```
+
 ```{r}
 tables <- list(subject=subject,
                sample=sample,
                sample_set=sample_set,
                dataset=dataset,
-               array_dataset=array,
+               array_dataset=array_dataset,
                file=file)
 ```
 
