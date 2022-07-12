@@ -20,14 +20,13 @@ library(tidyverse)
 
 ## Files in workspace
 
-To see what files are available in this workspace, we need the google bucket ID, which is returned by the `avbucket` function.
+To access files in this workspace, we need the google bucket ID, which is returned by the `avbucket` function. `gsutil_ls(bucket)` would list all the files in the bucket.
 
 ```{r}
 (bucket <- avbucket())
-gsutil_ls(bucket)
 ```
 
-To read from a google bucket, we use the `gsutil_pipe` function. We need to specify `"rb"` as "read from binary".
+To read from a google bucket, we use the `gsutil_pipe` function. We need to specify `"rb"` as "read from binary". An alternative is to copy the file to the local instance with `gsutil_cp`.
 
 ```{r}
 prefix <- "hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M"
@@ -82,38 +81,33 @@ count(sample_set, sample_set_id)
 
 Each dataset is linked to a sample_set, but the same sample set may correspond to multiple datasets (such as array data and imputed data).
 
-```{r}
-dataset <- tibble(dataset_id = "dataset1",
-                  dataset_type = "array",
-                  sample_set_id = "all")
-```
-
 ### Array data
 
-Metadata describing the array is stored in the array_dataset table.
+Metadata describing the array is stored in the array_dataset table. We save this as a set of "field" and "value" pairs for input to the workflow that assigns a unique identifier for each dataset.
 
 ```{r}
-array_dataset <- tibble(
-    dataset_id = "dataset1",
+array_fields <- list(
+    sample_set_id = "all",
     genotyping_center = "Wellcome Trust Sanger Institute",
     array_manufacturer = "Illumina",
     array_name = "Human 1M",
     genotype_calling_software = "BeadStudio",
     reference_assembly = "GRCh37"
 )
+array_fields <- tibble(field=names(array_fields),
+                       value=unlist(array_fields))
 ```
 
-Files are linked to datasets. The md5 hash of each file is used as the primary key for the 'file' table. This should be computed before uploading to the workspace and checked after upload to make sure the upload was successful.
+Files are linked to datasets. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
 
 ```{r}
 files <- paste0(bucket, "/", prefix, c(".bed", ".bim", ".fam"))
 md5 <- c("ec6096edea0d6f46191a0275577b3f02",
          "5a1e4276783afa0a235f907edae1dae3",
          "4d9651bb9e45054dc8ed8c1c59cba19d")
-file <- tibble(md5sum = md5,
-               dataset_id = "dataset1",
-               file_path = files,
-               description = c("bed", "bim", "fam"))
+array_file <- tibble(md5sum = md5,
+                     file_path = files,
+                     file_type = c("PLINK bed", "PLINK bim", "PLINK fam"))
 ```
 
 
@@ -122,7 +116,7 @@ file <- tibble(md5sum = md5,
 To test the tables using a workflow, they must be written as files to the workspace bucket.
 
 ```{r}
-table_names <- c("subject", "sample", "sample_set", "dataset", "array_dataset", "file")
+table_names <- c("subject", "sample", "sample_set", "array_dataset", "array_file")
 for (t in table_names) {
   outfile <- paste0("HapMap_", t, "_table.tsv")
   write_tsv(get(t), outfile)
@@ -133,61 +127,4 @@ for (t in table_names) {
 
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `data_model_report` workflow. Below we illustrate some of the steps in that workflow.
-
-```{r}
-primed_tsv <- "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_data_model_draft.tsv"
-model <- tsv_to_dm(list(url(primed_tsv)))
-model
-```
-
-```{r}
-tables <- list(subject=subject,
-               sample=sample,
-               sample_set=sample_set,
-               dataset=dataset,
-               array_dataset=array_dataset,
-               file=file)
-```
-
-```{r}
-check_table_names(tables, model)
-```
-
-```{r}
-check_column_names(tables, model)
-```
-
-```{r}
-check_column_types(tables, model)
-```
-
-```{r}
-check_primary_keys(tables, model)
-```
-
-```{r}
-check_foreign_keys(tables, model)
-```
-
-## Add data tables to workspace
-
-Once we have verified that all our tables comply with the data model, we can import them to the workspace. The data model is a required argument to the import functions, as it ensures that the primary keys (also known as 'entity ids' in AnVIL) are created correctly. The `overwrite` argument controls whether to overwrite existing data tables in the workspace.
-
-```{r}
-anvil_import_table(subject, table_name="subject", model, overwrite=TRUE)
-anvil_import_table(sample, table_name="sample", model, overwrite=TRUE)
-```
-
-Importing the sample_set table requires a dedicated function, as AnVIL creates a link between the original table and the set table.
-
-```{r}
-anvil_import_set(sample_set, table_name="sample_set", overwrite=TRUE)
-```
-
-```{r}
-anvil_import_table(dataset, table_name="dataset", model, overwrite=TRUE)
-anvil_import_table(array, table_name="array_dataset", model, overwrite=TRUE)
-anvil_import_table(file, table_name="file", model, overwrite=TRUE)
-```
-
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `genotype_report` workflow.
