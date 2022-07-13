@@ -94,8 +94,8 @@ array_fields <- list(
     genotype_calling_software = "BeadStudio",
     reference_assembly = "GRCh37"
 )
-array_fields <- tibble(field=names(array_fields),
-                       value=unlist(array_fields))
+array_dataset <- tibble(field=names(array_fields),
+                        value=unlist(array_fields))
 ```
 
 Files are linked to datasets. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
@@ -113,7 +113,7 @@ array_file <- tibble(md5sum = md5,
 
 ## Write tables as files to workspace bucket
 
-To test the tables using a workflow, they must be written as files to the workspace bucket.
+To check the tables using a workflow, they must be written as files to the workspace bucket.
 
 ```{r}
 table_names <- c("subject", "sample", "sample_set", "array_dataset", "array_file")
