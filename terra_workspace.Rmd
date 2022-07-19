@@ -48,7 +48,7 @@ subject <- sample %>%
 head(subject)
 ```
 
-The sample table links samples to subjects.
+The sample table links samples to subjects. For this 1000 Genomes example, sample_id and subject_id have the same values, but using different identifiers is recommended.
 
 ```{r}
 sample <- sample %>%
@@ -68,15 +68,21 @@ head(sample_set)
 
 ### Datasets
 
-Each dataset is linked to a sample set, and defines the type of data available. In this case, we have sequencing data.
+Each dataset is linked to a sample set. Each type of dataset (array, imputation, sequencing) has its own type-specific columns, which should be saved as a set of field/value pairs. In this case, we have sequencing data.
 
 ```{r}
-dataset <- tibble(dataset_id = "dataset1",
-                  dataset_type = "sequencing",
-                  sample_set_id = "all")
+sequencing_fields <- list(
+  sample_set_id = "all",
+  reference_assembly = "GRCh37",
+  sequencing_assay = "WGS",
+  seq_platform = "Illumina"
+)
+sequencing_dataset <- tibble(field=names(sequencing_fields),
+                             value=unlist(sequencing_fields))
 ```
 
-Files are linked to datasets. Rather than copying data, we create a 'file' table that references VCF files in their origin workspace.
+
+Files are linked to datasets. Rather than copying data, we create a 'sequencing_file' table that references VCF files in their origin workspace.
 In the source workspace, the paths to the VCF files are stored in a "Workspace data" table.
 
 ```{r}
@@ -125,85 +131,28 @@ chr <- sub(".", "", chr, fixed=TRUE)
 ```
 
 ```{r}
-file <- tibble(md5 = md5,
-               chr = chr, 
-               filename = vf,
-               dataset_id = "dataset1",
-               description = "VCF files by chromosome")
+sequencing_file <- tibble(md5sum = md5,
+                          chromosome = chr, 
+                          file_path = vf,
+                          file_type = "VCF")
 ```
 
-The 'sequencing_dataset' table contains metadata on the sequencing process.
+
+## Write tables as files to workspace bucket
+
+To check the tables using a workflow, they must be written as files to the workspace bucket.
 
 ```{r}
-sequencing <- tibble(
-  dataset_id = "dataset1",
-  reference_genome_build = "GRCh37",
-  analyte_type = "DNA",
-  sequencing_assay = "WGS",
-  date_data_generation = "2013-05-03",
-  seq_platform = "Illumina"
-)
-```
+bucket <- avbucket()
 
+table_names <- c("subject", "sample", "sample_set", "sequencing_dataset", "sequencing_file")
+for (t in table_names) {
+  outfile <- paste0("1000G_", t, "_table.tsv")
+  write_tsv(get(t), outfile)
+  gsutil_cp(outfile, bucket)
+}
+```
 
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model.
-
-```{r}
-primed_tsv <- "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_data_model_draft.tsv"
-model <- url(primed_tsv) %>%
-  tsv_to_dm()
-model
-```
-
-```{r}
-tables <- list(subject=subject,
-               sample=sample,
-               sample_set=sample_set,
-               dataset=dataset,
-               sequencing_dataset=sequencing,
-               file=file)
-```
-
-```{r}
-check_table_names(tables, model)
-```
-
-```{r}
-check_column_names(tables, model)
-```
-
-```{r}
-check_column_types(tables, model)
-```
-
-```{r}
-check_primary_keys(tables, model)
-```
-
-```{r}
-check_foreign_keys(tables, model)
-```
-
-
-## Add data tables to workspace
-
-Once we have verified that all our tables comply with the data model, we can import them to the workspace. The data model is a required argument to the import functions, as it ensures that the primary keys (also known as 'entity ids' in AnVIL) are created correctly. The `overwrite` argument controls whether to overwrite existing data tables in the workspace.
-
-```{r}
-anvil_import_table(subject, table_name="subject", model, overwrite=TRUE)
-anvil_import_table(sample, table_name="sample", model, overwrite=TRUE)
-```
-
-Importing the sample_set table requires a dedicated function, as AnVIL creates a link between the original table and the set table.
-
-```{r}
-anvil_import_set(sample_set, table_name="sample_set", overwrite=TRUE)
-```
-
-```{r}
-anvil_import_table(dataset, table_name="dataset", model, overwrite=TRUE)
-anvil_import_table(sequencing, table_name="sequencing_dataset", model, overwrite=TRUE)
-anvil_import_table(file, table_name="file", model, overwrite=TRUE)
-```
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `genotype_report` workflow.
