@@ -5,7 +5,7 @@ output: html_notebook
 
 # Import data to workspace: PLINK example
 
-We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. In this notebook, we import the data from these files into data tables.
+We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. In this notebook, we prepare the data from these files for importing into data tables.
 
 ## Install and load R packages
 

@@ -5,7 +5,7 @@ output: html_notebook
 
 # Import data to workspace: Terra example
 
-In this notebook we will import 1000 Genomes data into data tables, using the Bioconductor AnVIL package to interact with the workspace.
+In this notebook we will prepare 1000 Genomes data for importing into data tables, using the Bioconductor AnVIL package to interact with the workspace.
 
 ## Install and load R packages
 
