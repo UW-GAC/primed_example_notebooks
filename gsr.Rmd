@@ -1,0 +1,149 @@
+---
+title: "PRIMED example notebook: Genomic Summary Results"
+output: html_notebook
+---
+
+# Import data to workspace: GSR example
+
+We have uploaded GIANT Genomic Summary Results (GSR) to this workspace. In this notebook, we prepare the metadata about the analysis for import into an AnVIL workspace.
+
+## Install and load R packages
+
+```{r}
+# get the latest version of AnVIL from github
+#remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
+#remotes::install_github("UW-GAC/AnvilDataModels")
+library(AnVIL)
+library(AnvilDataModels)
+library(tidyverse)
+```
+
+## Prepare tables according to data model
+
+Metadata describing the analysis is stored in the analysis table. We save this as a set of "field" and "value" pairs for input to the workflow that assigns a unique identifier for each analysis.
+
+```{r}
+fields <- list(
+    gsr_source = "https://portals.broadinstitute.org/collaboration/giant/index.php/GIANT_consortium_data_files",
+    pubmed_id = "29273807",
+    first_author = "Valérie Turcot",
+    citation = "doi: 10.1038/s41588-017-0011-x",
+    upload_date = "2022-07-27",
+    contributor_contact = "sdmorris@uw.edu",
+    reported_trait = "BMI",
+    outcome_type = "quantitative",
+    trait_transformation = "inverse normal",
+    phenotype_definition_and_methods = "weight / height",
+    unit_of_phenotype_measurement = "kg / m^2",
+    reference_assembly = "GRCh37",
+    total_num_of_vars = "246328",
+    number_of_individuals = "526508",
+    effective_sample_size = "526508",
+    age_of_study_participants = ">=18 years",
+    cohort = "GIANT",
+    population_descriptors = "European | South Asian | African | East Asian | Hispanic",
+    population_percent_of_total = "85 | 6 | 5 | 2 | 2",
+    countries_of_recruitment = "Australia | Bangladesh | China | Denmark | Estonia | Finnland | Germany | Greece | Iceland | Ireland | Italy | Netherlands | Norway | Philippines | Sweden | Taiwan | UK | USA",
+    analysis_method = "score-statistics-based association analysis",
+    analysis_software = "RAREMETALWORKER | RVTEST",
+    analysis_parameters = "BMI was corrected for age, age^2 and genomic principal components",
+    genotyping_technology = "Exome Array",
+    is_meta_analysis = "TRUE"
+)
+analysis <- tibble(field=names(fields),
+                   value=unlist(fields))
+```
+
+
+Files are linked to analyses. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
+
+```{r}
+bucket <- avbucket()
+bmi_file <- "BMI_All_ancestry.txt"
+file_table <- tibble(md5sum = "ce323c092c3a6b4136ef53a95f6dc5fc",
+                     file_path = file.path(bucket, bmi_file),
+                     file_type = "data",
+                     num_vars = 246328,
+                     chromosome = "ALL")
+```
+
+The GIANT data is distributed as a single file per analysis. We read in the data, update the column names so it conforms to the PRIMED data model, and write each chromosome to a separate file.
+
+```{r}
+gsutil_cp(file.path(bucket, bmi_file), ".")
+```
+
+```{r}
+dat <- read_tsv(bmi_file)
+head(dat)
+```
+```{r}
+dat2 <- dat %>%
+  rename(chromosome = CHR,
+         position = POS,
+         rs_id = SNPNAME,
+         ref_allele = REF,
+         alt_allele = ALT,
+         p_value = Pvalue,
+         beta_se = se) %>%
+  mutate(strand = NA,
+         effect_allele = ref_allele,
+         other_allele = alt_allele,
+         effect_allele_freq = NA,
+         nobs = NA,
+         is_imputed = FALSE)
+```
+
+```{r}
+chrs <- unique(dat2$chromosome)
+chr_file <- lapply(chrs, function(c) {
+    # select only this chromosome
+    dat_chr <- filter(dat2, chromosome == c)
+    chr_file <- paste0("BMI_All_ancestry_chr", c, ".txt")
+    
+    # write tsv file
+    write_tsv(dat_chr, file=chr_file, na="")
+    
+    # get md5sum for file table
+    md5 <- tools::md5sum(chr_file)
+    
+    # copy file to google bucket
+    gsutil_cp(chr_file, bucket)
+    
+    ## return row for file table
+    tibble(
+        md5sum = md5,
+        num_vars = nrow(dat_chr),
+        file_path = file.path(bucket, chr_file),
+        file_type = "data",
+        chromosome = c
+    )
+})
+```
+
+```{r}
+file_tsv <- bind_rows(file_table, chr_file)
+```
+
+
+## Write tables as files to workspace bucket
+
+To check the tables using a workflow, they must be written as files to the workspace bucket.
+
+```{r}
+outfile <- "GIANT_BMI_file_table.tsv"
+write_tsv(file_tsv, outfile)
+gsutil_cp(outfile, bucket)
+
+outfile <- "GIANT_BMI_analysis_table.tsv"
+write_tsv(analysis, outfile)
+gsutil_cp(outfile, bucket)
+```
+
+
+## Check tables against data model
+
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `gsr_report` workflow.
+
+## Check data files against data dictionary
+
