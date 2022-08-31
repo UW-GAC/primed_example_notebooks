@@ -1,1 +1,6 @@
-{"gsr_report.analysis_file":"gs://fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/GIANT_BMI_analysis_table.tsv","gsr_report.file_table_file":"gs://fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/GIANT_BMI_file_table.tsv","gsr_report.model_url":"https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_model.tsv","gsr_report.out_prefix":"test"}
+{
+    "gsr_report.analysis_file": "gs: //fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/GIANT_BMI_analysis_table.tsv",
+    "gsr_report.file_table_file": "gs: //fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/GIANT_BMI_file_table.tsv",
+    "gsr_report.model_url": "https: //raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_model.tsv",
+    "gsr_report.out_prefix": "test"
+}
