@@ -1,0 +1,32 @@
+field	value
+gsr_source	https://portals.broadinstitute.org/collaboration/giant/index.php/GIANT_consortium_data_files
+pubmed_id	29273807
+first_author	V Turcot
+link	https://doi.org/10.1038%2Fs41588-017-0011-x
+consent_code	NRES
+upload_date	2022-07-27
+contributor_contact	sdmorris@uw.edu
+trait	BMI
+trait_type	quantitative
+trait_unit	kg / m^2
+trait_transformation	inverse normal
+trait_definition	weight / height
+covariates	age | age^2 | ancestry PCs
+concept_id	3038553
+reference_assembly	GRCh37
+n_variants	246328
+genotyping_technology	exome array
+genotyping_platform	Illumina
+is_imputed	FALSE
+imputation_reference_panel	Not Applicable
+imputation_reference_panel_detail	N/A
+n_samples	526508
+eff_sample_size	526508
+age_min	18
+cohorts	GIANT
+is_meta_analysis	TRUE
+population_descriptors	European | South Asian | African | East Asian | Hispanic
+population_proportions	85 | 6 | 5 | 2 | 2
+countries_of_recruitment	Australia | Bangladesh | China | Denmark | Estonia | Finnland | Germany | Greece | Iceland | Ireland | Italy | Netherlands | Norway | Philippines | Sweden | Taiwan | UK | USA
+analysis_method	score-statistics-based association analysis
+analysis_software	RAREMETALWORKER | RVTEST
