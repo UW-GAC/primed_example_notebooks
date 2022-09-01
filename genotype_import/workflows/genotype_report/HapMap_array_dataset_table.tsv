@@ -1,0 +1,7 @@
+field	value
+sample_set_id	all
+genotyping_center	Wellcome Trust Sanger Institute
+array_manufacturer	Illumina
+array_name	Human 1M
+genotype_calling_software	BeadStudio
+reference_assembly	GRCh37

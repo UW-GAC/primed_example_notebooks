@@ -1,0 +1,10 @@
+{
+    "genotype_report.dataset_file": "gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_array_dataset_table.tsv",
+    "genotype_report.dataset_type": "array",
+    "genotype_report.file_table_file": "gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_array_file_table.tsv",
+    "genotype_report.sample_file": "gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_sample_table.tsv",
+    "genotype_report.sample_set_file": "gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_sample_set_table.tsv",
+    "genotype_report.subject_file": "gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_subject_table.tsv",
+    "genotype_report.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.tsv",
+    "genotype_report.out_prefix": "test"
+}

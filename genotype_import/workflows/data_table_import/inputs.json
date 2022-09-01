@@ -1,0 +1,13 @@
+{
+    "data_table_import.table_files": {
+        "subject":"gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_subject_table.tsv",
+        "sample":"gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_sample_table.tsv",
+        "sample_set":"gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/HapMap_sample_set_table.tsv",
+        "array_dataset":"gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/91cf6d7f-b9b1-4ca1-9669-37bf3c720ddb/genotype_report/f2f69f5e-a1cc-4325-a24a-03734b31e859/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_dataset_table.tsv",
+        "array_file":"gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/91cf6d7f-b9b1-4ca1-9669-37bf3c720ddb/genotype_report/f2f69f5e-a1cc-4325-a24a-03734b31e859/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_file_table.tsv"
+    },
+    "data_table_import.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.tsv",
+    "data_table_import.workspace_name": "PRIMED_HapMap_genotype_demo",
+    "data_table_import.workspace_namespace": "primed-stephanie",
+    "data_table_import.overwrite": "true"
+}
