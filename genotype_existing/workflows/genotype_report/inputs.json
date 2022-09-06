@@ -1,0 +1,10 @@
+{
+    "genotype_report.dataset_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/1000G_sequencing_dataset_table.tsv",
+    "genotype_report.dataset_type": "sequencing",
+    "genotype_report.file_table_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/1000G_sequencing_file_table.tsv",
+    "genotype_report.sample_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/1000G_sample_table.tsv"
+    "genotype_report.sample_set_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/1000G_sample_set_table.tsv",
+    "genotype_report.subject_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/1000G_subject_table.tsv",
+    "genotype_report.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.tsv",
+    "genotype_report.out_prefix": "test"
+}
