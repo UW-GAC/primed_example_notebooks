@@ -39,12 +39,14 @@ head(sample)
 
 ### Sample and subject tables
 
-All phenotypes were simulated for the purposes of the GWAS tutorial in the origin workspace. In PRIMED (as in dbGaP and other AnVIL consortia) we distinguish between subjects (participants in a study) and samples (e.g. blood sample for genotyping). Multiple samples may be associated with the same subject. All of the data in this table more appropriately belongs in the subject table. In the PRIMED data model, we will actually have multiple tables, with the subject table containing key information like study and consent, and separate phenotype tables for each phenotype domain.
+All phenotypes were simulated for the purposes of the GWAS tutorial in the origin workspace. In PRIMED (as in dbGaP and other AnVIL consortia) we distinguish between subjects (participants in a study) and samples (e.g. blood sample for genotyping). Multiple samples may be associated with the same subject. All of the data in this table more appropriately belongs in the subject table. In the PRIMED data model, we will actually have multiple tables, with the subject table containing key information like study and consent, and separate phenotype tables for each phenotype domain. Here we add required columns for the subject table.
 
 ```{r}
 subject <- sample %>%
-  rename(subject_id=sample_id, 
-         superpopuation=ancestry)
+  rename(subject_id=sample_id,
+         reported_sex=sex) %>%
+  mutate(consent_code="NRES",
+         study_nickname="1000G")
 head(subject)
 ```
 
@@ -53,7 +55,8 @@ The sample table links samples to subjects. For this 1000 Genomes example, sampl
 ```{r}
 sample <- sample %>%
   select(sample_id) %>%
-  mutate(subject_id=sample_id)
+  mutate(subject_id=sample_id,
+         tissue_source=NA)
 head(sample)
 ```
 
@@ -73,7 +76,9 @@ Each dataset is linked to a sample set. Each type of dataset (array, imputation,
 ```{r}
 sequencing_fields <- list(
   sample_set_id = "all",
+  seq_center = NA,
   reference_assembly = "GRCh37",
+  alignment_method = NA,
   sequencing_assay = "WGS",
   seq_platform = "Illumina"
 )

@@ -1,4 +1,0 @@
-{
-    "data_dictionary_report.file_report": "${this.file_report}",
-    "data_dictionary_report.pass_checks": "${this.pass_checks}"
-}
