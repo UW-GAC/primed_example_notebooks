@@ -1,0 +1,4 @@
+{
+    "check_md5.file": "${this.file_path}",
+    "check_md5.md5sum": "${this.md5sum}"
+}

@@ -1,0 +1,7 @@
+{
+    "check_vcf_samples.dataset_id": "${this.sequencing_dataset_id}",
+    "check_vcf_samples.dataset_type": "sequencing",
+    "check_vcf_samples.vcf_file": "${this.file_path}",
+    "check_vcf_samples.workspace_name": "PRIMED_1000G_genotype_demo",
+    "check_vcf_samples.workspace_namespace": "primed-stephanie"
+}
