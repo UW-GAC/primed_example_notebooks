@@ -43,8 +43,6 @@ fields <- list(
     genotyping_technology = "exome array",
     genotyping_platform = "Illumina",
     is_imputed = "FALSE",
-    imputation_reference_panel = "Not Applicable",
-    imputation_reference_panel_detail = "N/A",
     n_samples = "526508",
     eff_sample_size = "526508",
     age_min = "18",
@@ -83,6 +81,7 @@ gsutil_cp(file.path(bucket, bmi_file), ".")
 dat <- read_tsv(bmi_file)
 head(dat)
 ```
+
 ```{r}
 dat2 <- dat %>%
   rename(chromosome = CHR,
@@ -90,8 +89,7 @@ dat2 <- dat %>%
          rsID = SNPNAME,
          ref_allele = REF,
          alt_allele = ALT,
-         p_value = Pvalue,
-         standard_error = se) %>%
+         p_value = Pvalue) %>%
   mutate(strand = NA,
          effect_allele = ref_allele,
          other_allele = alt_allele,
@@ -153,3 +151,4 @@ Once all tables have been created, we can check that they conform to the data mo
 
 ## Check data files against data dictionary
 
+Data files can be checked against the data dictionary with the `gsr_data_report` workflow.
