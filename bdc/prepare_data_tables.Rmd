@@ -1,0 +1,148 @@
+# Preparing data tables for TOPMed data
+
+## Copy sample and subject files to local instance
+
+```{r}
+library(AnVIL)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+avtables()
+```
+
+```{r}
+avtable("reference_file")
+```
+
+```{r}
+avtable("reference_file") %>%
+  filter(`pfb:data_format` == "TXT") %>%
+  select(`pfb:ga4gh_drs_uri`)
+```
+
+In terminal (after installing [terra-notebook-utils](https://support.terra.bio/hc/en-us/articles/6635247495579-How-to-access-data-with-DRS-URIs)):
+
+```
+/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/288ff0aa-a426-11ea-82d1-8bda0857af94 .
+/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/28987ea0-a426-11ea-8563-6f47bf753ef9 .
+/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/288dd2b6-a426-11ea-a277-3700232ac2c7 .
+/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/2897561a-a426-11ea-9bee-abbe2c808314 .
+```
+
+```{r}
+list.files(pattern="*.txt.gz")
+```
+
+## Create tables for PRIMED data model
+
+```{r}
+subj_file <- "phs000964.v3.pht004838.v1.p1.TOPMed_WGS_JHS_Subject.MULTI.txt.gz"
+samp_file <- "phs000964.v3.pht004839.v2.p1.TOPMed_WGS_JHS_Sample.MULTI.txt.gz"
+attr_file <- "phs000964.v3.pht004840.v2.p1.c3.TOPMed_WGS_JHS_Sample_Attributes.HMB-IRB.txt.gz"
+
+subj <- read_tsv(subj_file, col_types="ccccc", comment="#")
+samp <- read_tsv(samp_file, col_types="cccccc", comment="#")
+attr <- read_tsv(attr_file, col_types="cccccccccccc", comment="#")
+```
+
+```{r}
+dat <- attr %>%
+  left_join(samp) %>%
+  left_join(subj)
+```
+
+```{r}
+proj <- avtable("project")
+phs <- substr(proj$`pfb:dbgap_accession_number`,1,9)
+str <- strsplit(proj$`pfb:project_name`, "_") %>% unlist()
+study = str[1]
+cons <- str[2]
+```
+
+```{r}
+subject_table <- dat %>%
+  select(subject_id = SUBJECT_ID,
+         dbgap_subject_id = dbGaP_Subject_ID) %>%
+  distinct() %>%
+  mutate(consent_code = cons,
+         study_nickname = study,
+         dbgap_submission = TRUE,
+         dbgap_study_id = phs,
+         reported_sex = NA) # sometimes this is in subj file
+```
+
+```{r}
+count(dat, BODY_SITE, TopMed_Phase, SEQUENCING_CENTER)
+```
+
+```{r}
+sample_table <- dat %>%
+  select(sample_id = SAMPLE_ID,
+         subject_id = SUBJECT_ID,
+         dbgap_sample_id = dbGaP_Sample_ID,
+         batch = TopMed_Phase) %>%
+  mutate(tissue_source = "UBERON:0000178") # UBERON code for whole blood
+```
+
+```{r}
+sample_set <- dat %>%
+  select(sample_id = SAMPLE_ID) %>%
+  mutate(sample_set_id = paste("topmed", "freeze9", study, cons, sep="_"))
+```
+
+```{r}
+fields <- list(
+  sample_set_id = paste("topmed", "freeze9", study, cons, sep="_"),
+  seq_center = unique(dat$SEQUENCING_CENTER),
+  reference_assembly = "GRCh38",
+  alignment_method = "BWA-MEM",
+  sequencing_assay = "WGS",
+  seq_platform = "Illumina HiSeq X"
+)
+dataset_table <- tibble(field=names(fields),
+                        value=unlist(fields))
+```
+
+```{r}
+chr_from_filename <- function(f) {
+  chr <- stringr::str_extract(f, "chr[:alnum:]+[:punct:]")
+  chr <- sub("chr", "", chr, fixed=TRUE)
+  chr <- sub(".", "", chr, fixed=TRUE)
+  return(chr)
+}
+
+file_table <- avtable("reference_file") %>%
+  filter(`pfb:data_format` == "VCF") %>%
+  mutate(chromosome = chr_from_filename(`pfb:file_name`)) %>%
+  select(file_path = `pfb:ga4gh_drs_uri`,
+         file_type = `pfb:data_format`,
+         md5sum = `pfb:md5sum`,
+         chromosome)
+```
+
+```{r}
+dataset_fields <- list(
+  sample_set_id = unique(sample_set$sample_set_id),
+  seq_center = paste(unique(attr$SEQUENCING_CENTER, collapse=",")),
+  reference_assembly = "GRCh38",
+  alignment_method = NA,
+  sequencing_assay = "WGS",
+  seq_platform = "Illumina"
+)
+dataset_table <- tibble(field=names(dataset_fields),
+                        value=unlist(dataset_fields))
+```
+
+```{r}
+bucket <- avbucket()
+
+tables <- list("subject"=subject_table, "sample"=sample_table, "sample_set"=sample_set, 
+               "sequencing_dataset"=dataset_table, "sequencing_file"=file_table)
+for (t in names(tables)) {
+  outfile <- paste0(t, "_table.tsv")
+  write_tsv(tables[[t]], outfile)
+  gsutil_cp(outfile, bucket)
+}
+```
