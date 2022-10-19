@@ -123,19 +123,6 @@ file_table <- avtable("reference_file") %>%
 ```
 
 ```{r}
-dataset_fields <- list(
-  sample_set_id = unique(sample_set$sample_set_id),
-  seq_center = paste(unique(attr$SEQUENCING_CENTER, collapse=",")),
-  reference_assembly = "GRCh38",
-  alignment_method = NA,
-  sequencing_assay = "WGS",
-  seq_platform = "Illumina"
-)
-dataset_table <- tibble(field=names(dataset_fields),
-                        value=unlist(dataset_fields))
-```
-
-```{r}
 bucket <- avbucket()
 
 tables <- list("subject"=subject_table, "sample"=sample_table, "sample_set"=sample_set, 
