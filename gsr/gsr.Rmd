@@ -43,7 +43,7 @@ fields <- list(
     genotyping_technology = "exome array",
     genotyping_platform = "Illumina",
     is_imputed = "FALSE",
-    n_samples = "526508",
+    n_samp = "526508",
     eff_sample_size = "526508",
     age_min = "18",
     cohorts = "GIANT",
