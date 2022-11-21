@@ -6,7 +6,7 @@
         "sequencing_dataset": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/submissions/7ed8571c-87ae-46d2-b098-e7e76f9286aa/genotype_report/7fd83679-2af3-4772-9909-187925845d5b/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_dataset_table.tsv",
         "sequencing_file": "gs://fc-11a3154d-e66b-4c4b-be9d-ff1a1c4c688f/submissions/7ed8571c-87ae-46d2-b098-e7e76f9286aa/genotype_report/7fd83679-2af3-4772-9909-187925845d5b/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_file_table.tsv"
     },
-    "data_table_import.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.tsv",
+    "data_table_import.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.json",
     "data_table_import.workspace_name": "PRIMED_1000G_genotype_demo",
     "data_table_import.workspace_namespace": "primed-stephanie",
     "data_table_import.overwrite": "true"
