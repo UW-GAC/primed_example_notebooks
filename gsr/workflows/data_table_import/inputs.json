@@ -3,7 +3,7 @@
         "analysis": "gs://fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/submissions/39cfbbdb-26eb-440d-9b4f-981bc0940eb6/gsr_report/3031bd51-6582-4d89-b00c-92e51d08c182/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_analysis_table.tsv",
         "gsr_file": "gs://fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/submissions/39cfbbdb-26eb-440d-9b4f-981bc0940eb6/gsr_report/3031bd51-6582-4d89-b00c-92e51d08c182/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_file_table.tsv"
     },
-    "data_table_import.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_model.tsv",
+    "data_table_import.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_model.json",
     "data_table_import.workspace_name": "PRIMED_GIANT_GSR_demo",
     "data_table_import.workspace_namespace": "primed-stephanie",
     "data_table_import.overwrite": "true"

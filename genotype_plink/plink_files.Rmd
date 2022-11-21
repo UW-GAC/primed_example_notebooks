@@ -5,7 +5,7 @@ output: html_notebook
 
 # Import data to workspace: PLINK example
 
-We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. In this notebook, we prepare the data from these files for importing into data tables.
+We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. We then ran the `plink2_bed2vcf` workflow to convert the PLINK genotypes to a VCF file. In this notebook, we prepare the data from these files for importing into data tables.
 
 ## Install and load R packages
 
@@ -98,7 +98,7 @@ array_dataset <- tibble(field=names(array_fields),
                         value=unlist(array_fields))
 ```
 
-Files are linked to datasets. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
+Files are linked to datasets. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace. Later, we will use the `check_md5` workflow to make sure the upload was successful.
 
 ```{r}
 files <- paste0(bucket, "/", prefix, c(".bed", ".bim", ".fam"))
@@ -108,6 +108,15 @@ md5 <- c("ec6096edea0d6f46191a0275577b3f02",
 array_file <- tibble(md5sum = md5,
                      file_path = files,
                      file_type = c("PLINK bed", "PLINK bim", "PLINK fam"))
+```
+
+In addition to the PLINK files, we add the converted VCF to the file table.
+
+```{r}
+array_file <- array_file %>%
+  bind_rows(tibble(md5sum = "72162775a2858f36b9fbcdee1aaf7a6f",
+                   file_path = paste0(bucket, "/submissions/c5866edd-7f16-448a-b8af-3a613cfa0a55/plink2_bed2vcf/6d2f5aea-51d5-4ada-b96b-c800dae34ad3/call-results/hapmap3_r3_b37_Ilmn1M.vcf.gz"),
+                   file_type = "VCF"))
 ```
 
 
