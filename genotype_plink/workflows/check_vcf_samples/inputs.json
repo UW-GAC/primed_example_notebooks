@@ -2,6 +2,6 @@
     "check_vcf_samples.dataset_id": "${this.array_dataset_id}",
     "check_vcf_samples.dataset_type": "array",
     "check_vcf_samples.vcf_file": "${this.file_path}",
-    "check_vcf_samples.workspace_name": "PRIMED_HapMap_genotype_demo",
-    "check_vcf_samples.workspace_namespace": "primed-stephanie"
+    "check_vcf_samples.workspace_name": "PRIMED_example_genotype_HapMap",
+    "check_vcf_samples.workspace_namespace": "primed-cc"
 }

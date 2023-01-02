@@ -1,0 +1,6 @@
+{
+    "liftover_vcf.vcf_file": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/submissions/bcf1e11b-4836-4f27-9055-f91e7bb579b1/plink2_bed2vcf/393c7eb0-5fbf-4d35-9815-cd800b0c0793/call-results/cacheCopy/hapmap3_r3_Ilmn1M_hg19.vcf.gz",
+    "liftover_vcf.chain_url": "https://hgdownload.cse.ucsc.edu/goldenpath/hg19/liftOver/hg19ToHg38.over.chain.gz",
+    "liftover_vcf.target_fasta": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta",
+    "liftover_vcf.out_prefix": "hapmap3_r3_Ilmn1M_hg38"
+}
