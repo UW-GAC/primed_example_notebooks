@@ -1,6 +1,6 @@
 {
     "gsr_data_report.data_file": "${this.file_path}",
     "gsr_data_report.dd_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_dictionary.json",
-    "gsr_data_report.analysis_file": "gs://fc-7c5fa07f-cf1e-462b-8bfb-873f9ecaf550/submissions/38dc0740-313a-43bc-86b8-7f2103bc5620/gsr_report/b4cf4da3-1904-41ab-b9c7-a0079ba89c42/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_analysis_table.tsv",
+    "gsr_data_report.analysis_file": "gs://fc-19bbd8d9-a925-4192-b60e-f5966e7d397c/submissions/371536ae-f74e-4eb0-aeb7-9ed38229c447/gsr_report/5f785672-e0cc-4b9d-8065-e8371364abcb/call-results/glob-974de6e757df50a606ef705dbd9fc353/test_analysis_table.tsv",
     "gsr_data_report.out_prefix": "giant"
 }
