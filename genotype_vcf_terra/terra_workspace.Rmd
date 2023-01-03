@@ -10,9 +10,8 @@ In this notebook we will prepare 1000 Genomes data for importing into data table
 ## Install and load R packages
 
 ```{r}
-# get the latest version of AnVIL from github
-#remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
-#remotes::install_github("UW-GAC/AnvilDataModels")
+# get the latest version of AnvilDataModels from github
+#remotes::install_github("UW-GAC/AnvilDataModels", upgrade=FALSE)
 library(AnVIL)
 library(AnvilDataModels)
 library(tidyverse)
@@ -43,11 +42,25 @@ All phenotypes were simulated for the purposes of the GWAS tutorial in the origi
 
 ```{r}
 subject <- sample %>%
-  rename(subject_id=sample_id,
+  select(subject_id=sample_id,
          reported_sex=sex) %>%
   mutate(consent_code="NRES",
          study_nickname="1000G")
 head(subject)
+```
+
+Information on population descriptors belongs in the population_descriptors table. This is a long-form table where multiple descriptors for each subject are listed in different rows.
+
+```{r}
+population_descriptors <- sample %>%
+  select(subject_id=sample_id,
+         population,
+         superpopulation=ancestry) %>%
+  pivot_longer(c(population, superpopulation), 
+               names_to="descriptor_type",
+               values_to="population_descriptor")
+head(population_descriptors)
+count(population_descriptors, descriptor_type, population_descriptor)
 ```
 
 The sample table links samples to subjects. For this 1000 Genomes example, sample_id and subject_id have the same values, but using different identifiers is recommended.
@@ -122,9 +135,7 @@ md5 <- sapply(vf, function(f) {
     openssl::md5() %>%
     as.character()
 }, USE.NAMES=FALSE)
-
 ```
-
 
 
 Extract chromosome from the file name to add to the table.
@@ -150,7 +161,8 @@ To check the tables using a workflow, they must be written as files to the works
 ```{r}
 bucket <- avbucket()
 
-table_names <- c("subject", "sample", "sample_set", "sequencing_dataset", "sequencing_file")
+table_names <- c("subject", "population_descriptors", "sample", "sample_set", 
+                 "sequencing_dataset", "sequencing_file")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
   write_tsv(get(t), outfile)
