@@ -1,4 +1,6 @@
 md5sum	file_path	file_type	array_dataset_id	array_file_id
-ec6096edea0d6f46191a0275577b3f02	gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.bed	PLINK bed	b7e52738	595b1e42
-5a1e4276783afa0a235f907edae1dae3	gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.bim	PLINK bim	b7e52738	246fcd43
-4d9651bb9e45054dc8ed8c1c59cba19d	gs://fc-6c9cb609-9aaf-4e21-b977-2d569cdadabf/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.fam	PLINK fam	b7e52738	203d6c7f
+ec6096edea0d6f46191a0275577b3f02	gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.bed	PLINK bed	b7e52738	595b1e42
+5a1e4276783afa0a235f907edae1dae3	gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.bim	PLINK bim	b7e52738	246fcd43
+4d9651bb9e45054dc8ed8c1c59cba19d	gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/hapmap3_r3_b37_fwd.consensus.qc.poly_Ilmn1M.fam	PLINK fam	b7e52738	203d6c7f
+644afbb696822d378c2493fb4d06e389	gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/submissions/bcf1e11b-4836-4f27-9055-f91e7bb579b1/plink2_bed2vcf/393c7eb0-5fbf-4d35-9815-cd800b0c0793/call-results/cacheCopy/hapmap3_r3_Ilmn1M_hg19.vcf.gz	VCF	b7e52738	7454ad3a
+bc906202e47eef92ec5df7939f30c189	gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/submissions/2369a243-179e-4af6-a518-c4c29900008b/liftover_vcf/50004a72-e76e-4899-a5b6-9c927b957c2a/call-merge_vcf/hapmap3_r3_Ilmn1M_hg38.vcf.gz	VCF	b7e52738	62eac0a8
