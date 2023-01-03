@@ -11,7 +11,6 @@ We have uploaded HapMap data in PLINK format (bed/bim/fam) to this workspace. We
 
 ```{r}
 # get the latest version of AnVIL from github
-#remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
 #remotes::install_github("UW-GAC/AnvilDataModels")
 library(AnVIL)
 library(AnvilDataModels)
@@ -110,12 +109,15 @@ array_file <- tibble(md5sum = md5,
                      file_type = c("PLINK bed", "PLINK bim", "PLINK fam"))
 ```
 
-In addition to the PLINK files, we add the converted VCF to the file table.
+In addition to the PLINK files, we add the converted and lifted over VCFs to the file table. The workflows `plink2_bed2vcf` and `liftover_vcf` output the md5sum along with VCF files.
 
 ```{r}
 array_file <- array_file %>%
-  bind_rows(tibble(md5sum = "72162775a2858f36b9fbcdee1aaf7a6f",
-                   file_path = paste0(bucket, "/submissions/c5866edd-7f16-448a-b8af-3a613cfa0a55/plink2_bed2vcf/6d2f5aea-51d5-4ada-b96b-c800dae34ad3/call-results/hapmap3_r3_b37_Ilmn1M.vcf.gz"),
+  bind_rows(tibble(md5sum = c("644afbb696822d378c2493fb4d06e389", 
+                              "bc906202e47eef92ec5df7939f30c189"),
+                   file_path = paste0(bucket, c(
+                     "/submissions/bcf1e11b-4836-4f27-9055-f91e7bb579b1/plink2_bed2vcf/393c7eb0-5fbf-4d35-9815-cd800b0c0793/call-results/cacheCopy/hapmap3_r3_Ilmn1M_hg19.vcf.gz",
+                     "/submissions/2369a243-179e-4af6-a518-c4c29900008b/liftover_vcf/50004a72-e76e-4899-a5b6-9c927b957c2a/call-merge_vcf/hapmap3_r3_Ilmn1M_hg38.vcf.gz")),
                    file_type = "VCF"))
 ```
 
