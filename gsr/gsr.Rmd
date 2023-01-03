@@ -11,7 +11,6 @@ We have uploaded GIANT Genomic Summary Results (GSR) to this workspace. In this 
 
 ```{r}
 # get the latest version of AnVIL from github
-#remotes::install_github("Bioconductor/AnVIL", dependencies=FALSE)
 #remotes::install_github("UW-GAC/AnvilDataModels")
 library(AnVIL)
 library(AnvilDataModels)
@@ -29,7 +28,7 @@ fields <- list(
     first_author = "V Turcot",
     link = "https://doi.org/10.1038%2Fs41588-017-0011-x",
     consent_code = "NRES",
-    upload_date = "2022-07-27",
+    upload_date = "2023-01-03",
     contributor_contact = "sdmorris@uw.edu",
     trait = "BMI",
     trait_type = "quantitative",
@@ -95,7 +94,10 @@ dat2 <- dat %>%
          other_allele = alt_allele,
          effect_allele_freq = NA,
          n_samp = NA,
-         is_imputed = FALSE)
+         is_imputed = FALSE,
+         direction_of_effect = NA,
+         heterogeneity_p_value = NA,
+         heterogeneity_I2 = NA)
 ```
 
 ```{r}
