@@ -49,18 +49,61 @@ subject <- sample %>%
 head(subject)
 ```
 
-Information on population descriptors belongs in the population_descriptors table. This is a long-form table where multiple descriptors for each subject are listed in different rows.
+We prepare a data file with population descriptors, which will be listed in the population_descriptors_dataset table. Country of recruitment and country of birth should be included if known. A data dictionary should be included.
 
 ```{r}
-population_descriptors <- sample %>%
+country_map <- 
+  c(ACB="Barbados", ASW="USA", BEB="Bangladesh", CDX="China", CEU="USA", 
+    CHB="China", CHS="China", CLM="Columbia", ESN="Nigeria", FIN="Finland", 
+    GBR="UK", GIH="USA", GWD="Gambia", IBS="Spain", ITU="UK", JPT="Japan", 
+    KHV="Vietnam", LWK="Kenya", MSL="Sierra Leone", MXL="USA", PEL="Peru", 
+    PJL="Pakistan", PUR="USA", STU="UK", TSI="Italy", YRI="Nigeria")
+
+pop_desc <- sample %>%
   select(subject_id=sample_id,
          population,
          superpopulation=ancestry) %>%
-  pivot_longer(c(population, superpopulation), 
-               names_to="descriptor_type",
-               values_to="population_descriptor")
+  mutate(country_of_recruitment=country_map[population])
+head(pop_desc)
+
+dd <- tibble(var_name=names(pop_desc),
+             description=c("subject identifier",
+                           "population",
+                           "superpopulation",
+                           "country of recruitment"))
+
+pop_desc_file <- "1000G_populations.txt"
+pop_desc_dd_file <- "1000G_populations_DD.txt"
+write_tsv(pop_desc, pop_desc_file)
+write_tsv(dd, pop_desc_dd_file)
+```
+
+Copy the files to the workspace bucket and create the population_descriptors_dataset table.
+
+```{r}
+bucket <- avbucket()
+gsutil_cp(pop_desc_file, bucket)
+gsutil_cp(pop_desc_dd_file, bucket)
+```
+
+
+```{r}
+population_descriptors_dataset <- tibble(
+  study_nickname = "1000G",
+  pop_desc_data_file_path = file.path(bucket, pop_desc_file),
+  pop_desc_dd_file_path = file.path(bucket, pop_desc_dd_file)
+)
+population_descriptors_dataset
+```
+
+Now we reformat the population descriptors for the standardized population_descriptors table. Multiple descriptors are collapsed into a delimited list for each subject.
+
+```{r}
+population_descriptors <- pop_desc %>%
+  mutate(descriptor_type = "population | superpopulation",
+         population_descriptor = paste(population, superpopulation, sep=" | ")) %>%
+  select(subject_id, population_descriptor, descriptor_type, country_of_recruitment)
 head(population_descriptors)
-count(population_descriptors, descriptor_type, population_descriptor)
 ```
 
 The sample table links samples to subjects. For this 1000 Genomes example, sample_id and subject_id have the same values, but using different identifiers is recommended.
@@ -161,7 +204,9 @@ To check the tables using a workflow, they must be written as files to the works
 ```{r}
 bucket <- avbucket()
 
-table_names <- c("subject", "population_descriptors", "sample", "sample_set", 
+table_names <- c("subject", "population_descriptors", 
+                 "population_descriptors_dataset",
+                 "sample", "sample_set", 
                  "sequencing_dataset", "sequencing_file")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
