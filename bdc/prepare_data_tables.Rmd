@@ -17,18 +17,12 @@ avtable("reference_file")
 ```
 
 ```{r}
-avtable("reference_file") %>%
+txt_files <- avtable("reference_file") %>%
   filter(`pfb:data_format` == "TXT") %>%
-  select(`pfb:ga4gh_drs_uri`)
-```
+  select(`pfb:ga4gh_drs_uri`) %>%
+  unlist(use.names = FALSE)
 
-In terminal (after installing [terra-notebook-utils](https://support.terra.bio/hc/en-us/articles/6635247495579-How-to-access-data-with-DRS-URIs)):
-
-```
-/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/288ff0aa-a426-11ea-82d1-8bda0857af94 .
-/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/28987ea0-a426-11ea-8563-6f47bf753ef9 .
-/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/288dd2b6-a426-11ea-a277-3700232ac2c7 .
-/home/rstudio/.local/bin/tnu drs copy drs://dg.4503:dg.4503/2897561a-a426-11ea-9bee-abbe2c808314 .
+drs_cp(txt_files, ".")
 ```
 
 ```{r}
