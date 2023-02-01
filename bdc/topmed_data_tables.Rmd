@@ -81,10 +81,11 @@ count(dat, BODY_SITE, TopMed_Phase, SEQUENCING_CENTER)
 
 ```{r}
 sample_table <- dat %>%
+  mutate(batch = paste0(SEQUENCING_CENTER, "_Phase", TopMed_Phase)) %>%
   select(sample_id = SAMPLE_ID,
          subject_id = SUBJECT_ID,
          dbgap_sample_id = dbGaP_Sample_ID,
-         batch = TopMed_Phase) %>%
+         batch) %>%
   mutate(tissue_source = "UBERON:0000178") # UBERON code for whole blood
 ```
 
