@@ -21,8 +21,16 @@ txt_files <- avtable("reference_file") %>%
   filter(`pfb:data_format` == "TXT") %>%
   select(`pfb:ga4gh_drs_uri`) %>%
   unlist(use.names = FALSE)
+```
 
-drs_cp(txt_files, ".")
+```{r}
+#drs_cp(txt_files, ".") can't use for controlled access
+
+system("pip install --upgrade --no-cache-dir terra-notebook-utils")
+tnu <- "/home/rstudio/.local/bin/tnu"
+system(paste(tnu, "config set-workspace", avworkspace()))
+system(paste(tnu, "config set-workspace-namespace", avworkspace_namespace()))
+system(paste(tnu, "drs copy-batch", paste(txt_files, collapse=" "), "--dst ."))
 ```
 
 ```{r}
@@ -73,10 +81,11 @@ count(dat, BODY_SITE, TopMed_Phase, SEQUENCING_CENTER)
 
 ```{r}
 sample_table <- dat %>%
+  mutate(batch = paste0(SEQUENCING_CENTER, "_Phase", TopMed_Phase)) %>%
   select(sample_id = SAMPLE_ID,
          subject_id = SUBJECT_ID,
          dbgap_sample_id = dbGaP_Sample_ID,
-         batch = TopMed_Phase) %>%
+         batch) %>%
   mutate(tissue_source = "UBERON:0000178") # UBERON code for whole blood
 ```
 
