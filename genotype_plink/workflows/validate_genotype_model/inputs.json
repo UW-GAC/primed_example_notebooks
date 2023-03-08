@@ -1,0 +1,14 @@
+{
+    "validate_genotype_model.table_files": {
+        "subject": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/HapMap_subject_table.tsv",
+        "sample": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/HapMap_sample_table.tsv",
+        "sample_set": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/HapMap_sample_set_table.tsv",
+        "array_dataset": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/HapMap_array_dataset_table.tsv",
+        "array_file": "gs://fc-d57f9c4e-210f-46d6-a9a9-1a3071fa5fff/HapMap_array_file_table.tsv"
+    },
+    "validate_genotype_model.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.json",
+    "validate_genotype_model.import_tables": true,
+    "validate_genotype_model.overwrite": true,
+    "validate_genotype_model.workspace_name": "PRIMED_example_genotype_HapMap",
+    "validate_genotype_model.workspace_namespace": "primed-cc"
+}

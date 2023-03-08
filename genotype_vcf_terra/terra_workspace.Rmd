@@ -217,4 +217,4 @@ for (t in table_names) {
 
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `genotype_report` workflow.
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_genotype_model` workflow.

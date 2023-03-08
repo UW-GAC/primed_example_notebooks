@@ -1,0 +1,11 @@
+{
+    "validate_gsr_model.table_files": {
+        "analysis": "gs://fc-19bbd8d9-a925-4192-b60e-f5966e7d397c/GIANT_BMI_analysis_table.tsv",
+        "gsr_file": "gs://fc-19bbd8d9-a925-4192-b60e-f5966e7d397c/GIANT_BMI_file_table.tsv"
+    },
+    "validate_gsr_model.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_model.json",
+    "validate_gsr_model.import_tables": true,
+    "validate_gsr_model.overwrite": true,
+    "validate_gsr_model.workspace_name": "PRIMED_example_GSR_GIANT",
+    "validate_gsr_model.workspace_namespace": "primed-cc"
+}

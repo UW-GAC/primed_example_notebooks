@@ -149,7 +149,7 @@ gsutil_cp(outfile, bucket)
 
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `gsr_report` workflow.
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_gsr_model` workflow.
 
 ## Check data files against data dictionary
 
