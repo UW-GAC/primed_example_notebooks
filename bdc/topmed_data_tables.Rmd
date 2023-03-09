@@ -6,6 +6,7 @@
 library(AnVIL)
 library(dplyr)
 library(readr)
+library(jsonlite)
 ```
 
 ```{r}
@@ -42,7 +43,7 @@ list.files(pattern="*.txt.gz")
 ```{r}
 subj_file <- "phs000964.v3.pht004838.v1.p1.TOPMed_WGS_JHS_Subject.MULTI.txt.gz"
 samp_file <- "phs000964.v3.pht004839.v2.p1.TOPMed_WGS_JHS_Sample.MULTI.txt.gz"
-attr_file <- "phs000964.v3.pht004840.v2.p1.c3.TOPMed_WGS_JHS_Sample_Attributes.HMB-IRB.txt.gz"
+attr_file <- "phs000964.v3.pht004840.v2.p1.c1.TOPMed_WGS_JHS_Sample_Attributes.HMB-IRB-NPU.txt.gz"
 
 subj <- read_tsv(subj_file, col_types="ccccc", comment="#")
 samp <- read_tsv(samp_file, col_types="cccccc", comment="#")
@@ -130,9 +131,22 @@ bucket <- avbucket()
 
 tables <- list("subject"=subject_table, "sample"=sample_table, "sample_set"=sample_set, 
                "sequencing_dataset"=dataset_table, "sequencing_file"=file_table)
+file_list <- list()
 for (t in names(tables)) {
   outfile <- paste0(t, "_table.tsv")
   write_tsv(tables[[t]], outfile)
-  gsutil_cp(outfile, bucket)
+  bucketfile <- paste0(bucket, "/data_tables/", outfile)
+  gsutil_cp(outfile, bucketfile)
+  file_list[[t]] <- bucketfile
 }
+```
+
+```{r}
+json <- list("validate_genotype_model.table_files" = file_list,
+             "validate_genotype_model.model_url" = "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.json",
+             "validate_genotype_model.workspace_name" = avworkspace_name(),
+             "validate_genotype_model.workspace_namespace" = avworkspace_namespace(),
+             "validate_genotype_model.import_tables" = "true"
+) %>% toJSON(pretty=TRUE, auto_unbox=TRUE, unbox=TRUE)
+write(json, "validate_genotype_model.json")
 ```
