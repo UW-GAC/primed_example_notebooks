@@ -30,8 +30,8 @@ avtables(namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
 We import the "sample" table as a tibble:
 
 ```{r}
-sample <- avtable("sample", namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
-head(sample)
+sample_orig <- avtable("sample", namespace="amp-t2d-op", name="2019_ASHG_Reproducible_GWAS-V2")
+head(sample_orig)
 ```
 
 ## Prepare tables according to data model
@@ -41,13 +41,25 @@ head(sample)
 All phenotypes were simulated for the purposes of the GWAS tutorial in the origin workspace. In PRIMED (as in dbGaP and other AnVIL consortia) we distinguish between subjects (participants in a study) and samples (e.g. blood sample for genotyping). Multiple samples may be associated with the same subject. All of the data in this table more appropriately belongs in the subject table. In the PRIMED data model, we will actually have multiple tables, with the subject table containing key information like study and consent, and separate phenotype tables for each phenotype domain. Here we add required columns for the subject table.
 
 ```{r}
-subject <- sample %>%
+subject <- sample_orig %>%
   select(subject_id=sample_id,
          reported_sex=sex) %>%
   mutate(consent_code="NRES",
          study_nickname="1000G")
 head(subject)
 ```
+
+The sample table links samples to subjects. For this 1000 Genomes example, sample_id and subject_id have the same values, but using different identifiers is recommended.
+
+```{r}
+sample <- sample_orig %>%
+  select(sample_id) %>%
+  mutate(subject_id=sample_id,
+         tissue_source=NA)
+head(sample)
+```
+
+### Population descriptors
 
 We prepare a data file with population descriptors, which will be listed in the population_descriptors_dataset table. Country of recruitment and country of birth should be included if known. A data dictionary should be included.
 
@@ -59,7 +71,7 @@ country_map <-
     KHV="Vietnam", LWK="Kenya", MSL="Sierra Leone", MXL="USA", PEL="Peru", 
     PJL="Pakistan", PUR="USA", STU="UK", TSI="Italy", YRI="Nigeria")
 
-pop_desc <- sample %>%
+pop_desc <- sample_orig %>%
   select(subject_id=sample_id,
          population,
          superpopulation=ancestry) %>%
@@ -106,14 +118,16 @@ population_descriptors <- pop_desc %>%
 head(population_descriptors)
 ```
 
-The sample table links samples to subjects. For this 1000 Genomes example, sample_id and subject_id have the same values, but using different identifiers is recommended.
+### Phenotypes
+
+We create a pilot phenotype table using the simulated phenotypes from the original workspace.
 
 ```{r}
-sample <- sample %>%
-  select(sample_id) %>%
-  mutate(subject_id=sample_id,
-         tissue_source=NA)
-head(sample)
+pheno <- sample_orig %>%
+  select(subject_id=sample_id,
+         age_at_observation=age,
+         height, bmi, ldl)
+head(pheno)
 ```
 
 ### Sample sets
@@ -206,7 +220,7 @@ bucket <- avbucket()
 
 table_names <- c("subject", "population_descriptors", 
                  "population_descriptors_dataset",
-                 "sample", "sample_set", 
+                 "pheno", "sample", "sample_set", 
                  "sequencing_dataset", "sequencing_file")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
@@ -217,4 +231,5 @@ for (t in table_names) {
 
 ## Check tables against data model
 
-Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_genotype_model` workflow.
+Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_genotype_model`
+and `validate_phenotype_model` workflows.
