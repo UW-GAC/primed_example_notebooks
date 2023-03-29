@@ -112,9 +112,9 @@ Now we reformat the population descriptors for the standardized population_descr
 
 ```{r}
 population_descriptors <- pop_desc %>%
-  mutate(descriptor_type = "population | superpopulation",
-         population_descriptor = paste(population, superpopulation, sep=" | ")) %>%
-  select(subject_id, population_descriptor, descriptor_type, country_of_recruitment)
+  mutate(population_descriptor = "population | superpopulation",
+         population_label = paste(population, superpopulation, sep=" | ")) %>%
+  select(subject_id, population_descriptor, population_label, country_of_recruitment)
 head(population_descriptors)
 ```
 
