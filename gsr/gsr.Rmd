@@ -10,7 +10,7 @@ We have uploaded GIANT Genomic Summary Results (GSR) to this workspace. In this 
 ## Install and load R packages
 
 ```{r}
-# get the latest version of AnVIL from github
+# get the latest version of AnvilDataModels from github
 #remotes::install_github("UW-GAC/AnvilDataModels")
 library(AnVIL)
 library(AnvilDataModels)
@@ -26,7 +26,7 @@ fields <- list(
     gsr_source = "https://portals.broadinstitute.org/collaboration/giant/index.php/GIANT_consortium_data_files",
     pubmed_id = "29273807",
     first_author = "V Turcot",
-    link = "https://doi.org/10.1038%2Fs41588-017-0011-x",
+    gsr_source_url = "https://doi.org/10.1038%2Fs41588-017-0011-x",
     consent_code = "NRES",
     upload_date = "2023-01-03",
     contributor_contact = "sdmorris@uw.edu",
@@ -43,11 +43,12 @@ fields <- list(
     genotyping_platform = "Illumina",
     is_imputed = "FALSE",
     n_samp = "526508",
-    eff_sample_size = "526508",
+    n_effective = "526508",
     age_min = "18",
     cohorts = "GIANT",
     is_meta_analysis = "TRUE",
-    population_descriptors = "European | South Asian | African | East Asian | Hispanic",
+    population_descriptor = "reported ancestry",
+    population_labels = "European | South Asian | African | East Asian | Hispanic",
     population_proportions = "85 | 6 | 5 | 2 | 2",
     countries_of_recruitment = "Australia | Bangladesh | China | Denmark | Estonia | Finnland | Germany | Greece | Iceland | Ireland | Italy | Netherlands | Norway | Philippines | Sweden | Taiwan | UK | USA",
     analysis_method = "score-statistics-based association analysis",
