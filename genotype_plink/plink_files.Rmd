@@ -44,7 +44,7 @@ Create subject table
 
 ```{r}
 subject <- fam %>%
-    mutate(reported_sex=c("1"="M", "2"="F")[sex]) %>%
+    mutate(reported_sex=c("1"="Male", "2"="Female")[sex]) %>%
     select(subject_id=indiv, reported_sex) %>%
     mutate(consent_code="NRUP",
           study_nickname="HapMap",
