@@ -42,8 +42,9 @@ All phenotypes were simulated for the purposes of the GWAS tutorial in the origi
 
 ```{r}
 subject <- sample_orig %>%
+  mutate(reported_sex=c("M"="Male", "F"="Female")[sex]) %>%
   select(subject_id=sample_id,
-         reported_sex=sex) %>%
+         reported_sex) %>%
   mutate(consent_code="NRES",
          study_nickname="1000G")
 head(subject)
