@@ -1,3 +1,8 @@
+---
+title: "TOPMed data"
+output: html_notebook
+---
+
 # Preparing data tables for TOPMed data
 
 ## Copy sample and subject files to local instance
@@ -17,9 +22,11 @@ avtables()
 avtable("reference_file")
 ```
 
+Use one of the text files to get the list of samples in the freeze9b VCF files.
+
 ```{r}
 txt_files <- avtable("reference_file") %>%
-  filter(`pfb:data_format` == "TXT") %>%
+  filter(`pfb:data_format` == "TXT", grepl("TOPMed_WGS_genetic_sex.txt$", `pfb:file_name`)) %>%
   select(`pfb:ga4gh_drs_uri`) %>%
   unlist(use.names = FALSE)
 ```
@@ -35,25 +42,45 @@ system(paste(tnu, "drs copy-batch", paste(txt_files, collapse=" "), "--dst ."))
 ```
 
 ```{r}
-list.files(pattern="*.txt.gz")
+list.files(pattern="*.txt")
 ```
+```{r}
+idfile <- "ARIC_phs001211_TOPMed_WGS_genetic_sex.txt"
+f9samp <- read_tsv(idfile, show_col_types = FALSE)$SAMPLE_ID
+```
+
+
+CC uploaded the current versions of the subject and sample files from dbGaP.
+
+```{r}
+new_file_names <- c(
+  "phs001211.v4.pht005754.v4.p3.TOPMed_WGS_ARIC_Subject.MULTI.txt.gz",
+  "phs001211.v4.pht005755.v4.p3.TOPMed_WGS_ARIC_Sample.MULTI.txt.gz",
+  "phs001211.v4.pht005757.v3.p3.c1.TOPMed_WGS_ARIC_Sample_Attributes.HMB-IRB.txt.gz"
+)
+new_file_paths <- file.path(avbucket(), "uploaded_data_cc", new_file_names)
+gsutil_cp(new_file_paths, ".")
+```
+
+
+```{r}
+files <- list(
+    subj="phs001211.v4.pht005754.v4.p3.TOPMed_WGS_ARIC_Subject.MULTI.txt.gz",
+    samp="phs001211.v4.pht005755.v4.p3.TOPMed_WGS_ARIC_Sample.MULTI.txt.gz",
+    attr="phs001211.v4.pht005757.v3.p3.c1.TOPMed_WGS_ARIC_Sample_Attributes.HMB-IRB.txt.gz"
+)
+
+dat <- lapply(files, read_tsv, col_types=cols(.default=col_character()), comment="#")
+```
+
 
 ## Create tables for PRIMED data model
 
 ```{r}
-subj_file <- "phs000964.v3.pht004838.v1.p1.TOPMed_WGS_JHS_Subject.MULTI.txt.gz"
-samp_file <- "phs000964.v3.pht004839.v2.p1.TOPMed_WGS_JHS_Sample.MULTI.txt.gz"
-attr_file <- "phs000964.v3.pht004840.v2.p1.c1.TOPMed_WGS_JHS_Sample_Attributes.HMB-IRB-NPU.txt.gz"
-
-subj <- read_tsv(subj_file, col_types="ccccc", comment="#")
-samp <- read_tsv(samp_file, col_types="cccccc", comment="#")
-attr <- read_tsv(attr_file, col_types="cccccccccccc", comment="#")
-```
-
-```{r}
-dat <- attr %>%
-  left_join(samp) %>%
-  left_join(subj)
+dat <- dat$attr %>%
+  left_join(dat$samp) %>%
+  left_join(dat$subj) %>%
+  filter(SAMPLE_ID %in% f9samp)
 ```
 
 ```{r}
@@ -77,12 +104,18 @@ subject_table <- dat %>%
 ```
 
 ```{r}
-count(dat, BODY_SITE, TopMed_Phase, SEQUENCING_CENTER)
+count(dat, BODY_SITE)
+```
+
+```{r}
+count(dat, TOPMed_Phase, TOPMed_Project, Funding_Source, SEQUENCING_CENTER)
 ```
 
 ```{r}
 sample_table <- dat %>%
-  mutate(batch = paste0(SEQUENCING_CENTER, "_Phase", TopMed_Phase)) %>%
+  mutate(batch = ifelse(!is.na(TOPMed_Phase),
+                        paste0(SEQUENCING_CENTER, "_Phase", TOPMed_Phase),
+                        paste0(SEQUENCING_CENTER, "_", Funding_Source))) %>%
   select(sample_id = SAMPLE_ID,
          subject_id = SUBJECT_ID,
          dbgap_sample_id = dbGaP_Sample_ID,
@@ -99,7 +132,7 @@ sample_set <- dat %>%
 ```{r}
 fields <- list(
   sample_set_id = paste("topmed", "freeze9", study, cons, sep="_"),
-  seq_center = unique(dat$SEQUENCING_CENTER),
+  seq_center = paste0(unique(dat$SEQUENCING_CENTER), collapse=" | "),
   reference_assembly = "GRCh38",
   alignment_method = "BWA-MEM",
   sequencing_assay = "WGS",
@@ -117,13 +150,28 @@ chr_from_filename <- function(f) {
   return(chr)
 }
 
-file_table <- avtable("reference_file") %>%
+file_table_1 <- avtable("reference_file") %>%
   filter(`pfb:data_format` == "VCF") %>%
   mutate(chromosome = chr_from_filename(`pfb:file_name`)) %>%
   select(file_path = `pfb:ga4gh_drs_uri`,
+         file_name = `pfb:file_name`,
          file_type = `pfb:data_format`,
          md5sum = `pfb:md5sum`,
          chromosome)
+```
+
+```{r}
+file_table_2 <- avtable("reference_file") %>%
+  filter(`pfb:data_format` == "TXT", grepl("TOPMed_WGS", `pfb:file_name`)) %>%
+  select(file_path = `pfb:ga4gh_drs_uri`,
+         file_name = `pfb:file_name`,
+         md5sum = `pfb:md5sum`) %>%
+  mutate(file_type = ifelse(grepl("_DD.txt$", file_name), "data dictionary", 
+                     ifelse(grepl("kinship", file_name), "supporting file",
+                            "quality metrics"))) %>%
+  mutate(chromosome = NA)
+
+file_table <- bind_rows(file_table_1, file_table_2)
 ```
 
 ```{r}
