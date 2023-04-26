@@ -1,0 +1,9 @@
+{
+    "validate_phenotype_model.table_files": {
+        "population_descriptor": "gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_population_descriptors_table.tsv",
+        "population_descriptor_dataset": "gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_population_descriptors_dataset_table.tsv"
+    },
+    "validate_phenotype_model.model_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_phenotype_data_model.json",
+    "validate_phenotype_model.workspace_name": "PRIMED_example_genotype_1000G",
+    "validate_phenotype_model.workspace_namespace": "primed-cc"
+}

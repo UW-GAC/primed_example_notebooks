@@ -1,6 +1,7 @@
 {
     "gsr_data_report.data_file": "${this.file_path}",
+    "gsr_data_report.analysis_id": "${this.analysis_id}",
     "gsr_data_report.dd_url": "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_GSR_data_dictionary.json",
-    "validate_gsr_model.workspace_name": "PRIMED_example_GSR_GIANT",
-    "validate_gsr_model.workspace_namespace": "primed-cc"
+    "gsr_data_report.workspace_name": "PRIMED_example_GSR_GIANT",
+    "gsr_data_report.workspace_namespace": "primed-cc"
 }
