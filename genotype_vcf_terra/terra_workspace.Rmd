@@ -56,13 +56,13 @@ The sample table links samples to subjects. For this 1000 Genomes example, sampl
 sample <- sample_orig %>%
   select(sample_id) %>%
   mutate(subject_id=sample_id,
-         tissue_source=NA)
+         tissue_source="Unknown")
 head(sample)
 ```
 
 ### Population descriptors
 
-We prepare a data file with population descriptors, which will be listed in the population_descriptors_dataset table. Country of recruitment and country of birth should be included if known. A data dictionary should be included.
+We prepare a data file with population descriptors, which will be listed in the phenotype_unharmonized table. Country of recruitment and country of birth should be included if known. A data dictionary should be included.
 
 ```{r}
 country_map <- 
@@ -91,7 +91,7 @@ write_tsv(pop_desc, pop_desc_file)
 write_tsv(dd, pop_desc_dd_file)
 ```
 
-Copy the files to the workspace bucket and create the population_descriptors_dataset table.
+Copy the files to the workspace bucket.
 
 ```{r}
 bucket <- avbucket()
@@ -99,15 +99,6 @@ gsutil_cp(pop_desc_file, bucket)
 gsutil_cp(pop_desc_dd_file, bucket)
 ```
 
-
-```{r}
-population_descriptors_dataset <- tibble(
-  study_nickname = "1000G",
-  pop_desc_data_file_path = file.path(bucket, pop_desc_file),
-  pop_desc_dd_file_path = file.path(bucket, pop_desc_dd_file)
-)
-population_descriptors_dataset
-```
 
 Now we reformat the population descriptors for the standardized population_descriptors table. Multiple descriptors are collapsed into a delimited list for each subject.
 
@@ -119,16 +110,57 @@ population_descriptors <- pop_desc %>%
 head(population_descriptors)
 ```
 
+```{r}
+pop_desc_std_file <- "1000G_population_descriptor.txt"
+write_tsv(population_descriptors, pop_desc_std_file)
+gsutil_cp(pop_desc_std_file, bucket)
+```
+
 ### Phenotypes
 
 We create a pilot phenotype table using the simulated phenotypes from the original workspace.
 
 ```{r}
-pheno <- sample_orig %>%
+pilot <- sample_orig %>%
   select(subject_id=sample_id,
          age_at_observation=age,
          height, bmi, ldl)
-head(pheno)
+head(pilot)
+```
+
+```{r}
+pheno_file <- "1000G_phenotypes.txt"
+write_tsv(pilot, pheno_file)
+gsutil_cp(pheno_file, bucket)
+```
+
+
+The pilot and population_descriptor files are listed in the phenotype_harmonized table.
+
+```{r}
+phenotype_harmonized <- tibble(
+  domain = c("pilot", "population_descriptor"),
+  file_path = file.path(bucket, c(pheno_file, pop_desc_std_file)),
+  file_readme_path = "readme",
+  n_subjects = 2504,
+  n_rows = 2504
+) %>%
+  mutate(md5sum = tools::md5sum(basename(file_path)))
+phenotype_harmonized
+```
+
+The original population_descriptor file is listed in the phenotype_unharmonized table.
+
+```{r}
+phenotype_unharmonized <- tibble(
+  description = "unformatted population descriptors",
+  file_path = file.path(bucket, pop_desc_file),
+  file_dd_path = file.path(bucket, pop_desc_dd_file),
+  n_subjects = length(unique(pop_desc$subject_id)),
+  n_rows = nrow(pop_desc)
+) %>%
+  mutate(md5sum = tools::md5sum(basename(file_path)))
+phenotype_unharmonized
 ```
 
 ### Sample sets
@@ -147,9 +179,9 @@ Each dataset is linked to a sample set. Each type of dataset (array, imputation,
 ```{r}
 sequencing_fields <- list(
   sample_set_id = "all",
-  seq_center = NA,
+  seq_center = "unnknown",
   reference_assembly = "GRCh37",
-  alignment_method = NA,
+  alignment_method = "unnknown",
   sequencing_assay = "WGS",
   seq_platform = "Illumina"
 )
@@ -219,9 +251,10 @@ To check the tables using a workflow, they must be written as files to the works
 ```{r}
 bucket <- avbucket()
 
-table_names <- c("subject", "population_descriptors", 
-                 "population_descriptors_dataset",
-                 "pheno", "sample", "sample_set", 
+table_names <- c("subject",
+                 "phenotype_harmonized",
+                 "phenotype_unharmonized",
+                 "sample", "sample_set", 
                  "sequencing_dataset", "sequencing_file")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
