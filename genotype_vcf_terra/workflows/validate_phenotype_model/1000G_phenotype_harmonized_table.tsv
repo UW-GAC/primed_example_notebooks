@@ -1,0 +1,3 @@
+domain	file_path	file_readme_path	n_subjects	n_rows	md5sum
+pilot	gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_phenotypes.txt	readme	2504	2504	d9c40d18de3d03341821dabc82aa3db5
+population_descriptor	gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_population_descriptor.txt	readme	2504	2504	710bbd4c1601ae816d429a118dfa37ab

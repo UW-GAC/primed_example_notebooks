@@ -1,7 +1,7 @@
 field	value
 sample_set_id	all
-seq_center	NA
+seq_center	unnknown
 reference_assembly	GRCh37
-alignment_method	NA
+alignment_method	unnknown
 sequencing_assay	WGS
 seq_platform	Illumina

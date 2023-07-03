@@ -1,0 +1,5 @@
+var_name	description
+subject_id	subject identifier
+population	population
+superpopulation	superpopulation
+country_of_recruitment	country of recruitment

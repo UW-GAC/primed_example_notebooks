@@ -1,0 +1,2 @@
+description	file_path	file_dd_path	n_subjects	n_rows	md5sum
+unformatted population descriptors	gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_populations.txt	gs://fc-8dc38d1d-c3f4-46de-8d4c-176967d6663e/1000G_populations_DD.txt	2504	2504	e7c1ea6b013e4df49013c8aac7419f33
