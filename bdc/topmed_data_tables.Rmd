@@ -1,28 +1,108 @@
----
-title: "TOPMed data"
-output: html_notebook
----
-
 # Preparing data tables for TOPMed data
 
-## Copy sample and subject files to local instance
+## Setup
 
 ```{r}
 library(AnVIL)
 library(dplyr)
 library(readr)
+library(stringr)
 library(jsonlite)
 ```
 
+### Set constants
+
 ```{r}
-avtables()
+# These are the standard values used by dbGaP, but they can be overridden here.
+SUBJECT_FILE_PATTERN <- "Subject.MULTI.txt.gz"
+SAMPLE_FILE_PATTERN <- "Sample.MULTI.txt.gz"
+ATTRIBUTES_FILE_PATTERN <- "Sample_Attributes.*txt.gz"
+
+# Could probably figure some of these out from the xml.
+SUBJECT_COLUMN <- "SUBJECT_ID"
+CONSENT_COLUMN <- "CONSENT"
+SEX_COLUMN <- "SEX"
+SAMPLE_COLUMN <- "SAMPLE_ID"
+BODY_SITE_COLUMN = "BODY_SITE"
+PHASE_COLUMN <- "TOPMed_Phase"
+PROJECT_COLUMN <- "TOPMed_Project"
+FUNDING_COLUMN <- "Funding_Source"
+SEQUENCING_COLUMN <- "SEQUENCING_CENTER"
+
+TISSUE_SOURCE <- "UBERON:0000178" # UBERON code for whole blood
+```
+
+### Get information about the current workspace
+
+```{r}
+BUCKET <- avbucket()
+```
+
+### Get information about the study
+
+```{r}
+proj <- avtable("project")
+(phs <- substr(proj$`pfb:dbgap_accession_number`,1,9))
+str <- str_split_1(proj$`pfb:project_name`, "_")
+(study_nickname = str[1])
+(consent_abbreviation <- str[2])
+```
+
+## Find and read subject and sample files
+
+```{r}
+files <- avfiles_ls(path=file.path("uploaded_data_cc"), full_names=TRUE)
+length(files)
+```
+
+### Subject file
+
+```{r}
+subj_file <- files[str_detect(files, SUBJECT_FILE_PATTERN)]
+stopifnot(length(subj_file) == 1)
+subj_file
 ```
 
 ```{r}
-avtable("reference_file")
+fl <- tempfile()
+gsutil_cp(file.path(BUCKET, subj_file), fl)
+subj <- read_tsv(fl, col_types=cols(.default=col_character()), comment="#")
+head(subj)
 ```
 
-Use one of the text files to get the list of samples in the freeze9b VCF files.
+
+### Sample file
+
+```{r}
+samp_file <- files[str_detect(files, SAMPLE_FILE_PATTERN)]
+stopifnot(length(samp_file) == 1)
+samp_file
+```
+
+```{r}
+fl <- tempfile()
+gsutil_cp(file.path(BUCKET, samp_file), fl)
+samp <- read_tsv(fl, col_types=cols(.default=col_character()), comment="#")
+head(samp)
+```
+
+### Sample attributes file
+
+```{r}
+attr_file <- files[str_detect(files, ATTRIBUTES_FILE_PATTERN)]
+stopifnot(length(attr_file) == 1)
+attr_file
+```
+
+```{r}
+fl <- tempfile()
+gsutil_cp(file.path(BUCKET, attr_file), fl)
+attr <- read_tsv(fl, col_types=cols(.default=col_character()), comment="#")
+head(attr)
+```
+
+The above files may contain subjects and samples not in the current VCF files (exchange-area only samples).
+Get the freeze 9 genetic sex file for a list of included samples.
 
 ```{r}
 txt_files <- avtable("reference_file") %>%
@@ -32,107 +112,103 @@ txt_files <- avtable("reference_file") %>%
 ```
 
 ```{r}
-#drs_cp(txt_files, ".") can't use for controlled access
-
+fl <- tempfile()
 system("pip install --upgrade --no-cache-dir terra-notebook-utils")
 tnu <- "/home/rstudio/.local/bin/tnu"
 system(paste(tnu, "config set-workspace", avworkspace()))
 system(paste(tnu, "config set-workspace-namespace", avworkspace_namespace()))
-system(paste(tnu, "drs copy-batch", paste(txt_files, collapse=" "), "--dst ."))
-```
-
-```{r}
-list.files(pattern="*.txt")
-```
-```{r}
-idfile <- "ARIC_phs001211_TOPMed_WGS_genetic_sex.txt"
-f9samp <- read_tsv(idfile, show_col_types = FALSE)$SAMPLE_ID
-```
-
-
-CC uploaded the current versions of the subject and sample files from dbGaP.
-
-```{r}
-new_file_names <- c(
-  "phs001211.v4.pht005754.v4.p3.TOPMed_WGS_ARIC_Subject.MULTI.txt.gz",
-  "phs001211.v4.pht005755.v4.p3.TOPMed_WGS_ARIC_Sample.MULTI.txt.gz",
-  "phs001211.v4.pht005757.v3.p3.c1.TOPMed_WGS_ARIC_Sample_Attributes.HMB-IRB.txt.gz"
-)
-new_file_paths <- file.path(avbucket(), "uploaded_data_cc", new_file_names)
-gsutil_cp(new_file_paths, ".")
-```
-
-
-```{r}
-files <- list(
-    subj="phs001211.v4.pht005754.v4.p3.TOPMed_WGS_ARIC_Subject.MULTI.txt.gz",
-    samp="phs001211.v4.pht005755.v4.p3.TOPMed_WGS_ARIC_Sample.MULTI.txt.gz",
-    attr="phs001211.v4.pht005757.v3.p3.c1.TOPMed_WGS_ARIC_Sample_Attributes.HMB-IRB.txt.gz"
-)
-
-dat <- lapply(files, read_tsv, col_types=cols(.default=col_character()), comment="#")
+system(paste(tnu, "drs copy-batch", paste(txt_files, collapse=" "), "--dst", fl))
+f9samp <- read_tsv(fl, col_types=cols(.default=col_character()))$SAMPLE_ID
+length(f9samp)
 ```
 
 
 ## Create tables for PRIMED data model
 
+### Sample table
+
 ```{r}
-dat <- dat$attr %>%
-  left_join(dat$samp) %>%
-  left_join(dat$subj) %>%
-  filter(SAMPLE_ID %in% f9samp)
+dat <- attr %>%
+  left_join(samp) %>%
+  filter(!!sym(SAMPLE_COLUMN) %in% f9samp)
 ```
 
 ```{r}
-proj <- avtable("project")
-phs <- substr(proj$`pfb:dbgap_accession_number`,1,9)
-str <- strsplit(proj$`pfb:project_name`, "_") %>% unlist()
-study = str[1]
-cons <- str[2]
+count(dat, !!sym(BODY_SITE_COLUMN))
 ```
 
 ```{r}
-subject_table <- dat %>%
-  select(subject_id = SUBJECT_ID,
-         dbgap_subject_id = dbGaP_Subject_ID) %>%
-  distinct() %>%
-  mutate(consent_code = cons,
-         study_nickname = study,
-         dbgap_submission = TRUE,
-         dbgap_study_id = phs,
-         reported_sex = NA) # sometimes this is in subj file
-```
-
-```{r}
-count(dat, BODY_SITE)
-```
-
-```{r}
-count(dat, TOPMed_Phase, TOPMed_Project, Funding_Source, SEQUENCING_CENTER)
+count(dat, !!sym(PHASE_COLUMN), !!sym(PROJECT_COLUMN), !!sym(FUNDING_COLUMN), !!sym(SEQUENCING_COLUMN))
 ```
 
 ```{r}
 sample_table <- dat %>%
-  mutate(batch = ifelse(!is.na(TOPMed_Phase),
-                        paste0(SEQUENCING_CENTER, "_Phase", TOPMed_Phase),
-                        paste0(SEQUENCING_CENTER, "_", Funding_Source))) %>%
-  select(sample_id = SAMPLE_ID,
-         subject_id = SUBJECT_ID,
+  mutate(SEQUENCING_CENTER = sub(" ", "_", !!sym(SEQUENCING_COLUMN))) %>%
+  mutate(batch = ifelse(!is.na(!!sym(PHASE_COLUMN)),
+                        paste0(SEQUENCING_CENTER, "_Phase", !!sym(PHASE_COLUMN)),
+                        paste0(SEQUENCING_CENTER, "_", !!sym(FUNDING_COLUMN)))) %>%
+  mutate(batch = sub("Phaselegacy", "legacy", batch)) %>%
+  select(sample_id = !!sym(SAMPLE_COLUMN),
+         subject_id = !!sym(SUBJECT_COLUMN),
          dbgap_sample_id = dbGaP_Sample_ID,
          batch) %>%
-  mutate(tissue_source = "UBERON:0000178") # UBERON code for whole blood
+  mutate(tissue_source = TISSUE_SOURCE)
 ```
+
+
+### Sample set table
 
 ```{r}
 sample_set <- dat %>%
-  select(sample_id = SAMPLE_ID) %>%
-  mutate(sample_set_id = paste("topmed", "freeze9", study, cons, sep="_"))
+  select(sample_id = !!sym(SAMPLE_COLUMN)) %>%
+  mutate(sample_set_id = paste("topmed", "freeze9", study_nickname, consent_abbreviation, sep="_"))
+```
+
+
+### Subject table
+
+```{r}
+# expect 1=male, 2=female
+# does not account for other values, so check
+map_sex <- function(x) {
+  print(table(x, useNA="ifany"))
+  sex <- c("1"="Male", "2"="Female")[x]
+  sex[is.na(sex)] <- "Unknown"
+  return(sex)
+}
 ```
 
 ```{r}
+subject_table <- subj %>%
+  filter(!!sym(SUBJECT_COLUMN) %in% dat[[SUBJECT_COLUMN]]) %>%
+  rename(
+    subject_id=!!sym(SUBJECT_COLUMN),
+    dbgap_subject_id=dbGaP_Subject_ID,
+  ) %>%
+  mutate(
+    consent_code=consent_abbreviation,
+    study_nickname=study_nickname,
+    dbgap_submission=TRUE,
+    dbgap_study_id=phs,
+    reported_sex=map_sex(!!sym(SEX_COLUMN))
+  ) %>%
+  select(
+    subject_id,
+    dbgap_subject_id,
+    consent_code,
+    study_nickname,
+    dbgap_submission,
+    dbgap_study_id,
+    reported_sex
+  )
+```
+
+### Dataset table
+
+```{r}
 fields <- list(
-  sample_set_id = paste("topmed", "freeze9", study, cons, sep="_"),
-  seq_center = paste0(unique(dat$SEQUENCING_CENTER), collapse=" | "),
+  sample_set_id = paste("topmed", "freeze9", study_nickname, consent_abbreviation, sep="_"),
+  seq_center = paste(sort(unique(dat[[SEQUENCING_COLUMN]])), collapse=" | "),
   reference_assembly = "GRCh38",
   alignment_method = "BWA-MEM",
   sequencing_assay = "WGS",
@@ -142,6 +218,8 @@ dataset_table <- tibble(field=names(fields),
                         value=unlist(fields))
 ```
 
+### File table
+
 ```{r}
 chr_from_filename <- function(f) {
   chr <- stringr::str_extract(f, "chr[:alnum:]+[:punct:]")
@@ -150,51 +228,53 @@ chr_from_filename <- function(f) {
   return(chr)
 }
 
-file_table_1 <- avtable("reference_file") %>%
+file_table <- avtable("reference_file") %>%
   filter(`pfb:data_format` == "VCF") %>%
   mutate(chromosome = chr_from_filename(`pfb:file_name`)) %>%
   select(file_path = `pfb:ga4gh_drs_uri`,
-         file_name = `pfb:file_name`,
          file_type = `pfb:data_format`,
          md5sum = `pfb:md5sum`,
          chromosome)
 ```
 
-```{r}
-file_table_2 <- avtable("reference_file") %>%
-  filter(`pfb:data_format` == "TXT", grepl("TOPMed_WGS", `pfb:file_name`)) %>%
-  select(file_path = `pfb:ga4gh_drs_uri`,
-         file_name = `pfb:file_name`,
-         md5sum = `pfb:md5sum`) %>%
-  mutate(file_type = ifelse(grepl("_DD.txt$", file_name), "data dictionary", 
-                     ifelse(grepl("kinship", file_name), "supporting file",
-                            "quality metrics"))) %>%
-  mutate(chromosome = NA)
 
-file_table <- bind_rows(file_table_1, file_table_2)
-```
+## Write tables to google bucket
 
 ```{r}
-bucket <- avbucket()
-
 tables <- list("subject"=subject_table, "sample"=sample_table, "sample_set"=sample_set, 
                "sequencing_dataset"=dataset_table, "sequencing_file"=file_table)
 file_list <- list()
 for (t in names(tables)) {
   outfile <- paste0(t, "_table.tsv")
   write_tsv(tables[[t]], outfile)
-  bucketfile <- paste0(bucket, "/data_tables/", outfile)
+  bucketfile <- paste0(BUCKET, "/data_tables/", outfile)
   gsutil_cp(outfile, bucketfile)
   file_list[[t]] <- bucketfile
 }
 ```
+
+## Workflow inputs
 
 ```{r}
 json <- list("validate_genotype_model.table_files" = file_list,
              "validate_genotype_model.model_url" = "https://raw.githubusercontent.com/UW-GAC/primed_data_models/main/PRIMED_genotype_data_model.json",
              "validate_genotype_model.workspace_name" = avworkspace_name(),
              "validate_genotype_model.workspace_namespace" = avworkspace_namespace(),
-             "validate_genotype_model.import_tables" = "true"
+             "validate_genotype_model.import_tables" = "true",
+             "check_md5.project_id" = gcloud_project()
 ) %>% toJSON(pretty=TRUE, auto_unbox=TRUE, unbox=TRUE)
 write(json, "validate_genotype_model.json")
 ```
+
+Check if we need to request a larger instance to check the VCF files
+(default is 10G)
+
+```{r}
+file_size_bytes <- avtable("reference_file") %>%
+  filter(`pfb:data_format` == "VCF") %>%
+  select(`pfb:file_size`) %>%
+  unlist() %>%
+  max()
+(file_size_gb <- file_size_bytes / 1e9)
+```
+
