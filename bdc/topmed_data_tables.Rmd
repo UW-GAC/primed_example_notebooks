@@ -261,7 +261,7 @@ json <- list("validate_genotype_model.table_files" = file_list,
              "validate_genotype_model.workspace_name" = avworkspace_name(),
              "validate_genotype_model.workspace_namespace" = avworkspace_namespace(),
              "validate_genotype_model.import_tables" = "true",
-             "check_md5.project_id" = gcloud_project()
+             "validate_genotype_model.check_md5.project_id" = gcloud_project()
 ) %>% toJSON(pretty=TRUE, auto_unbox=TRUE, unbox=TRUE)
 write(json, "validate_genotype_model.json")
 ```
