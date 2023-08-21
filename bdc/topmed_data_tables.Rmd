@@ -155,6 +155,9 @@ sample_table <- dat %>%
   mutate(tissue_source = TISSUE_SOURCE)
 ```
 
+```{r}
+count(sample_table, batch)
+```
 
 ### Sample set table
 
@@ -228,13 +231,28 @@ chr_from_filename <- function(f) {
   return(chr)
 }
 
-file_table <- avtable("reference_file") %>%
+file_table_1 <- avtable("reference_file") %>%
   filter(`pfb:data_format` == "VCF") %>%
   mutate(chromosome = chr_from_filename(`pfb:file_name`)) %>%
   select(file_path = `pfb:ga4gh_drs_uri`,
+         file_name = `pfb:file_name`,
          file_type = `pfb:data_format`,
          md5sum = `pfb:md5sum`,
          chromosome)
+```
+
+```{r}
+file_table_2 <- avtable("reference_file") %>%
+  filter(`pfb:data_format` == "TXT", grepl("TOPMed_WGS", `pfb:file_name`)) %>%
+  select(file_path = `pfb:ga4gh_drs_uri`,
+         file_name = `pfb:file_name`,
+         md5sum = `pfb:md5sum`) %>%
+  mutate(file_type = ifelse(grepl("_DD.txt$", file_name), "data dictionary", 
+                     ifelse(grepl("kinship", file_name), "supporting file",
+                            "quality metrics"))) %>%
+  mutate(chromosome = "None")
+
+file_table <- bind_rows(file_table_1, file_table_2)
 ```
 
 
