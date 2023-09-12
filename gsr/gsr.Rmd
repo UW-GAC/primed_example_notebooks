@@ -59,21 +59,11 @@ analysis <- tibble(field=names(fields),
 ```
 
 
-Files are linked to analyses. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
+The GIANT data is distributed as a single file per analysis. We read in the data, update the column names so it conforms to the PRIMED data model, and write each chromosome to a separate file.
 
 ```{r}
 bucket <- avbucket()
 bmi_file <- "BMI_All_ancestry.txt"
-file_table <- tibble(md5sum = "ce323c092c3a6b4136ef53a95f6dc5fc",
-                     file_path = file.path(bucket, bmi_file),
-                     file_type = "data",
-                     n_variants = 246328,
-                     chromosome = "ALL")
-```
-
-The GIANT data is distributed as a single file per analysis. We read in the data, update the column names so it conforms to the PRIMED data model, and write each chromosome to a separate file.
-
-```{r}
 gsutil_cp(file.path(bucket, bmi_file), ".")
 ```
 
@@ -90,7 +80,7 @@ dat2 <- dat %>%
          ref_allele = REF,
          alt_allele = ALT,
          p_value = Pvalue) %>%
-  mutate(strand = NA,
+  mutate(strand = "+",
          effect_allele = ref_allele,
          other_allele = alt_allele,
          effect_allele_freq = NA,
@@ -100,6 +90,8 @@ dat2 <- dat %>%
          heterogeneity_p_value = NA,
          heterogeneity_I2 = NA)
 ```
+
+Files are linked to analyses. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
 
 ```{r}
 chrs <- unique(dat2$chromosome)
@@ -126,10 +118,7 @@ chr_file <- lapply(chrs, function(c) {
         chromosome = c
     )
 })
-```
-
-```{r}
-file_tsv <- bind_rows(file_table, chr_file)
+file_table <- bind_rows(chr_file)
 ```
 
 
@@ -139,7 +128,7 @@ To check the tables using a workflow, they must be written as files to the works
 
 ```{r}
 outfile <- "GIANT_BMI_file_table.tsv"
-write_tsv(file_tsv, outfile)
+write_tsv(file_table, outfile)
 gsutil_cp(outfile, bucket)
 
 outfile <- "GIANT_BMI_analysis_table.tsv"
@@ -151,7 +140,5 @@ gsutil_cp(outfile, bucket)
 ## Check tables against data model
 
 Once all tables have been created, we can check that they conform to the data model. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_gsr_model` workflow.
-
-## Check data files against data dictionary
-
-Data files can be checked against the data dictionary with the `gsr_data_report` workflow.
+This workflow will also check that md5sums in the `gsr_file` table match the files in the google bucket,
+ and that all data files match the data dictionary.
