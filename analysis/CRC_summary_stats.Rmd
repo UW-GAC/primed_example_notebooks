@@ -115,3 +115,19 @@ bind_rows(crc_gsr_file, ukbb_gsr_file) %>%
 ```
 
 
+# Read in summary statistics
+
+```{r}
+library(readr)
+
+ukbb_chr22_file <- ukbb_gsr_file %>%
+  filter(chromosome == 22) %>%
+  select(file_path) %>%
+  unlist() %>%
+  basename()
+
+ukbb_chr22 <- read_tsv(file.path("UKBB_CRC", ukbb_chr22_file))
+head(ukbb_chr22)
+```
+
+
