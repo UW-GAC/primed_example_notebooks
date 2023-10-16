@@ -117,6 +117,8 @@ bind_rows(crc_gsr_file, ukbb_gsr_file) %>%
 
 # Read in summary statistics
 
+Since we have already copied the GSR files to our compute environment, we can read a file into R.
+
 ```{r}
 library(readr)
 
@@ -130,4 +132,46 @@ ukbb_chr22 <- read_tsv(file.path("UKBB_CRC", ukbb_chr22_file))
 head(ukbb_chr22)
 ```
 
+We read GSR files for chromosome 22 from both analyses and match variants. One of the analyses has 
+all chromosomes in a single file, so we filter to the desired set of variants.
+
+```{r}
+crc_file <- crc_gsr_file %>%
+  select(file_path) %>%
+  unlist() %>%
+  basename()
+
+crc_chr22 <- read_tsv(file.path("GWAS_CRC", crc_file)) %>%
+  filter(chromosome == 22)
+```
+
+We need to know if the files are both in the same genome build to decide if they can
+be merged as-is or if liftover is required. This information is in the analysis table.
+
+```{r}
+select(ukbb_analysis, analysis_id, reference_assembly) %>%
+  filter(analysis_id %in% ukbb_gsr_file$analysis_id)
+select(crc_analysis, analysis_id, reference_assembly)
+```
+
+Both analyses are in reference assembly GRCh37. This means we can join the GSR 
+tables on overlapping variants.
+
+```{r}
+nrow(ukbb_chr22)
+nrow(crc_chr22)
+```
+
+```{r}
+merged <- inner_join(ukbb_chr22, crc_chr22, 
+                     by=c("chromosome", "position", "effect_allele", "other_allele"), 
+                     suffix=c("_ukbb", "_crc"))
+nrow(merged)
+head(merged)
+```
+
+```{r}
+library(ggplot2)
+ggplot(merged, aes(beta_ukbb, beta_crc)) + geom_point() + xlim(-1,1) + ylim(-1,1)
+```
 
