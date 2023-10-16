@@ -14,10 +14,7 @@ open access workspaces.
 - https://anvil.terra.bio/#workspaces/primed-data-cc-open/PRIMED_PAN_UKBB_GSR_CANCER
 - https://anvil.terra.bio/#workspaces/primed-data-primed-cancer-open/PRIMED_CRC_PMID36539618
 
-To fetch data from a workspace, we need two pieces of information: the
-workspace name and the namespace, also known as the billing project. The URL for
-every AnVIL workspace takes the form 
-`<https://anvil.terra.bio/#workspaces/namespace/workspace_name>`.
+To fetch data from a workspace, we need two pieces of information: the workspace name and the namespace, also known as the billing project. The URL for every AnVIL workspace takes the form `<https://anvil.terra.bio/#workspaces/namespace/workspace_name>`. Therefore, we can always find this information for a workspace by navigating to it in the Workspaces menu on the AnVIL platform. Based on the URLs listed above, we can identify the workspace names and namespaces to be: 
 
 ```{r}
 ukbb_workspace <- "PRIMED_PAN_UKBB_GSR_CANCER"
@@ -28,8 +25,7 @@ crc_namespace <- "primed-data-primed-cancer-open"
 
 # Retrieve data from UKBB workspace
 
-We start with the UKBB Cancer workspace. Using the AnVIL package, we can read in the
-`analysis` table to identify relevant analyses for our project.
+We start with the UKBB Cancer workspace. Using the `avtable()` function from the AnVIL package, we can read in the `analysis` table to identify relevant analyses for our project. Each row of the `analysis` table corresponds to a different analysis with summary statistics in the workspace. See the PRIMED Data Model for details on all of the columns in this table. The `trait` column gives the name of the trait variable for that analysis. 
 
 ```{r}
 library(AnVIL)
@@ -42,29 +38,30 @@ ukbb_analysis <- avtable("analysis",
 count(ukbb_analysis, trait)
 ```
 
-There are four analyses of colorectal cancer, in different populations.
+There are four analyses of colorectal cancer, in different populations. Each row in the `analysis` table is assigned an `analysis_id` when it is imported to AnVIL, which is the primary key for this table. 
 
 ```{r}
 ukbb_crc <- ukbb_analysis %>%
   filter(trait == "Colorectal cancer")
 
-count(ukbb_crc, population_descriptor, population_labels)
+select(ukbb_crc, analysis_id, trait, population_descriptor, population_labels)
 ```
 
-The `gsr_file` table contains bucket paths to the data for these analyses. We
-use the `analysis_id` to identify the files we want.
+The `gsr_file` table contains bucket paths to the data from these analyses, one file per row. See the PRIMED Data Model for details on all of the columns in this table. The `analysis_id` links the analysis to files in the `gsr_file` table, so we use it to identify the files in the `gsr_file` table corresponding to the analysis we want (in this case, the files from the multi-population analysis).
 
 ```{r}
 ukbb_gsr_file <- avtable("gsr_file", 
                     name = ukbb_workspace,
                     namespace = ukbb_namespace) %>%
-  filter(analysis_id %in% ukbb_crc$analysis_id)
+  filter(analysis_id == "93f9b24b")
+
+select(ukbb_gsr_file, analysis_id, chromosome, file_path) %>%
+  head(n=2)
 
 count(ukbb_gsr_file, analysis_id)
 ```
 
-Each analysis has 23 files, one file per chromosome. We copy the files to our
-current cloud environment.
+This analysis has 23 files, one file per chromosome. We use the `gsutil_cp()` function to copy the files to our current cloud environment.
 
 ```{r}
 dir.create("UKBB_CRC")
@@ -81,7 +78,7 @@ crc_analysis <- avtable("analysis",
                     name = crc_workspace,
                     namespace = crc_namespace)
 
-select(crc_analysis, trait, population_descriptor, population_labels)
+select(crc_analysis, analysis_id, trait, population_descriptor, population_labels)
 ```
 
 The `gsr_file` table contains bucket paths to the data for this analysis.
@@ -90,9 +87,11 @@ The `gsr_file` table contains bucket paths to the data for this analysis.
 crc_gsr_file <- avtable("gsr_file", 
                     name = crc_workspace,
                     namespace = crc_namespace)
+
+select(crc_gsr_file, analysis_id, chromosome, file_path)
 ```
 
-This analysis has only one associated file, with the results for all chromosomes.
+This analysis has only one associated file, with the results for all chromosomes. We use the `gsutil_cp()` function to copy the files to our current cloud environment.
 
 ```{r}
 dir.create("GWAS_CRC")
@@ -100,7 +99,7 @@ gsutil_cp(crc_gsr_file$file_path, "GWAS_CRC")
 ```
 
 
-# Writing data tables to the workspace
+# Write data tables to the workspace
 
 To more easily keep track of the data we're working with, we can create 
 `analysis` and `gsr_file` tables in this workspace. Since all data is in the
@@ -113,5 +112,66 @@ bind_rows(crc_analysis, ukbb_analysis) %>%
   avtable_import(entity = "analysis_id")
 bind_rows(crc_gsr_file, ukbb_gsr_file) %>%
   avtable_import(entity = "gsr_file_id")
+```
+
+
+# Read in summary statistics
+
+Since we have already copied the GSR files to our compute environment, we can read a file into R.
+
+```{r}
+library(readr)
+
+ukbb_chr22_file <- ukbb_gsr_file %>%
+  filter(chromosome == 22) %>%
+  select(file_path) %>%
+  unlist() %>%
+  basename()
+
+ukbb_chr22 <- read_tsv(file.path("UKBB_CRC", ukbb_chr22_file))
+head(ukbb_chr22)
+```
+
+We read GSR files for chromosome 22 from both analyses and match variants. One of the analyses has 
+all chromosomes in a single file, so we filter to the desired set of variants.
+
+```{r}
+crc_file <- crc_gsr_file %>%
+  select(file_path) %>%
+  unlist() %>%
+  basename()
+
+crc_chr22 <- read_tsv(file.path("GWAS_CRC", crc_file)) %>%
+  filter(chromosome == 22)
+```
+
+We need to know if the files are both in the same genome build to decide if they can
+be merged as-is or if liftover is required. This information is in the analysis table.
+
+```{r}
+select(ukbb_analysis, analysis_id, reference_assembly) %>%
+  filter(analysis_id %in% ukbb_gsr_file$analysis_id)
+select(crc_analysis, analysis_id, reference_assembly)
+```
+
+Both analyses are in reference assembly GRCh37. This means we can join the GSR 
+tables on overlapping variants.
+
+```{r}
+nrow(ukbb_chr22)
+nrow(crc_chr22)
+```
+
+```{r}
+merged <- inner_join(ukbb_chr22, crc_chr22, 
+                     by=c("chromosome", "position", "effect_allele", "other_allele"), 
+                     suffix=c("_ukbb", "_crc"))
+nrow(merged)
+head(merged)
+```
+
+```{r}
+library(ggplot2)
+ggplot(merged, aes(beta_ukbb, beta_crc)) + geom_point() + xlim(-1,1) + ylim(-1,1)
 ```
 
