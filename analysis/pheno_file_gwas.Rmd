@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 This notebook demonstrates how to prepare a phenotype file for use with the
-primed_genesis_gwas workflow. 
+[primed_genesis_gwas](https://github.com/UW-GAC/primed-genesis-gwas) workflow. 
 
 Load R libraries:
 
