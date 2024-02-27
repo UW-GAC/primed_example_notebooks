@@ -1,0 +1,94 @@
+---
+title: "Prepare phenotype file for GWAS"
+output: html_notebook
+---
+
+This notebook demonstrates how to prepare a phenotype file for use with the
+primed_genesis_gwas workflow. 
+
+Load R libraries:
+
+```{r}
+library(AnVIL)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(stringr)
+```
+
+Phenotype file paths are stored in the "phenotype_harmonized" data table in a 
+PRIMED workspace. We use the `avtable` function to read this table, and find 
+the file paths for the phenotype files we need for this analysis. In this example,
+we are using a simulated LDL phenotype found in the "pilot" phenotype file.
+
+We also need the population_descriptor phenotype file, as we will use "population"
+as a covariate in the analysis. For each table, we copy the file from the google
+bucket to our compute instance and read it into R.
+
+```{r}
+pheno_tables <- avtable("phenotype_harmonized")
+read_phen_table <- function(table_name) {
+  phen_file <- pheno_tables %>%
+    filter(domain == table_name) %>%
+    select(file_path) %>%
+    unlist()
+  gsutil_cp(phen_file, ".")
+  read_tsv(basename(phen_file))
+}
+```
+
+```{r}
+subj <- avtable("subject")
+phen <- read_phen_table("pilot")
+pop <- read_phen_table("population_descriptor")
+```
+
+The population_descriptor [data model](https://github.com/UW-GAC/primed_data_models/blob/main/PRIMED_phenotype_data_model.json#L58)
+allows multiple descriptors for each subject, with a delimiter. Below is a function
+that extracts a single descriptor and corresponding labels from the table.
+
+```{r}
+select_pop_desc <- function(pop_desc_table, descriptor) {
+  dat <- pop_desc_table %>%
+    separate_longer_delim(starts_with("population"), delim="|") %>%
+    mutate(across(starts_with("population"), str_trim)) %>%
+    pivot_wider(names_from=population_descriptor, values_from=population_label) %>%
+    select(subject_id, all_of(descriptor))
+}
+```
+
+We select the outcome and covariates we plan to use in the GWAS. The GENESIS workflow
+expects a column called 'sex' with values 'M' and 'F', so these values must be 
+mapped from the PRIMED data model.
+
+```{r}
+phen_gwas <- subj %>%
+  mutate(sex=c("Male"="M", "Female"="F")[reported_sex]) %>%
+  inner_join(phen) %>%
+  select(subject_id, sex, age_at_observation, ldl) %>%
+  inner_join(select_pop_desc(pop, "population"))
+```
+
+In the PRIMED data model, the sample table links subject identifiers (subject_id)
+to the sample identifiers in the genotype files (sample_id). The GENESIS workflow
+requires sample_id to match phenotypes to genotypes.
+
+```{r}
+sample <- avtable("sample")
+```
+
+```{r}
+phen_gwas_samples <- sample %>%
+  select(sample_id, subject_id) %>%
+  inner_join(phen_gwas)
+```
+
+The GENESIS workflow expects a phenotype file in CSV format. We save the
+phenotype data table as CSV and copy it to the workspace bucket.
+
+```{r}
+outfile <- "phenotypes_ldl_gwas.csv"
+bucket_path <- file.path(avbucket(), "GWAS", outfile)
+write_csv(phen_gwas_samples, outfile)
+gsutil_cp(outfile, bucket_path)
+```
