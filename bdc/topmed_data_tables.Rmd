@@ -114,7 +114,7 @@ txt_files <- avtable("reference_file") %>%
 ```{r}
 fl <- tempfile()
 system("pip install --upgrade --no-cache-dir terra-notebook-utils")
-tnu <- "/home/rstudio/.local/bin/tnu"
+tnu <- "/usr/local/bin/tnu"
 system(paste(tnu, "config set-workspace", avworkspace()))
 system(paste(tnu, "config set-workspace-namespace", avworkspace_namespace()))
 system(paste(tnu, "drs copy-batch", paste(txt_files, collapse=" "), "--dst", fl))
@@ -279,7 +279,7 @@ json <- list("validate_genotype_model.table_files" = file_list,
              "validate_genotype_model.workspace_name" = avworkspace_name(),
              "validate_genotype_model.workspace_namespace" = avworkspace_namespace(),
              "validate_genotype_model.import_tables" = "true",
-             "validate_genotype_model.check_md5.project_id" = gcloud_project()
+             "validate_genotype_model.md5check.project_id" = gcloud_project()
 ) %>% toJSON(pretty=TRUE, auto_unbox=TRUE, unbox=TRUE)
 write(json, "validate_genotype_model.json")
 ```
