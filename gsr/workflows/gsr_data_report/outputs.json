@@ -1,4 +1,4 @@
 {
-    "gsr_data_report.file_report": "${this.file_report}",
+    "gsr_data_report.validation_report": "${this.validation_report}",
     "gsr_data_report.pass_checks": "${this.pass_checks}"
 }
