@@ -19,7 +19,7 @@ library(tidyverse)
 
 ## Prepare tables according to data model
 
-Metadata describing the analysis is stored in the analysis table. We save this as a set of "field" and "value" pairs for input to the workflow that assigns a unique identifier for each analysis.
+Metadata describing the analysis is stored in the association_analysis table. We save this as a set of "field" and "value" pairs for input to the workflow that assigns a unique identifier for each analysis.
 
 ```{r}
 fields <- list(
@@ -84,11 +84,9 @@ dat2 <- dat %>%
          effect_allele = ref_allele,
          other_allele = alt_allele,
          effect_allele_freq = NA,
-         n_samp = NA,
          is_imputed = FALSE,
          direction_of_effect = NA,
-         heterogeneity_p_value = NA,
-         heterogeneity_I2 = NA)
+         heterogeneity_p_value = NA)
 ```
 
 Files are linked to analyses. The md5 hash of each file is used to generate the primary key for the 'file' table. The md5 should be computed before uploading to the workspace and checked after upload to make sure the upload was successful. 
