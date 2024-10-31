@@ -1,4 +1,3 @@
-
 define_clusters <- function(pcs, cluster_centers) {
   n_pcs <- ncol(cluster_centers)
   sample_ids <- pcs[,2]

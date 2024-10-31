@@ -1,6 +1,6 @@
 library(AnVIL)
 library(readr)
-source("primed_example_notebooks/legacy_project/define_clusters.R")
+source("https://raw.githubusercontent.com/UW-GAC/primed_example_notebooks/refs/heads/main/legacy_project/define_clusters.R")
 
 gsutil_cp("gs://fc-a8511200-791a-4375-bccf-fbe41ac3f9f6/pca/kmeans_14clusters_centers.txt", ".")
 cluster_centers <- read_tsv("kmeans_14clusters_centers.txt")
