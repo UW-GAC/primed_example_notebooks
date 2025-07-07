@@ -1,0 +1,87 @@
+---
+title: "Creating a sequencing alignment table"
+output: html_notebook
+---
+
+This notebook illustrates how to create a sequencing_alignment table in the PRIMED data model.
+
+First, we load needed R libraries.
+
+```{r}
+#BiocManager::install("AnVILGCP")
+library(AnVIL)
+library(dplyr)
+library(readr)
+```
+
+We are using high-coverage 1000 Genomes data as an example, so we read in the necessary data tables from the public AnVIL workspace.
+
+```{r}
+workspace <- "1000G-high-coverage-2019"
+namespace <- "anvil-datastorage"
+participant <- avtable("participant", name=workspace, namespace=namespace)
+sample_ws <- avtable("sample", name=workspace, namespace=namespace)
+pedigree <- avtable("pedigree", name=workspace, namespace=namespace)
+```
+
+The subject and sample tables are required, so we prepare those first.
+
+## Subject table
+
+This table lists subjects with the ID that will link them to phenotypes. In this case, the ID we want is in the SAMPLE_NAME column of the participant table. We also join the pedigree table in order to include reported_sex.
+
+```{r}
+subject <- participant %>%
+  left_join(pedigree, by=c(SAMPLE_NAME="pedigree_id")) %>%
+  mutate(reported_sex = c("1"="Male", "2"="Female")[Sex]) %>%
+  select(subject_id = SAMPLE_NAME, reported_sex) %>%
+  mutate(consent_code = "NRES",
+         study_nickname = "1000G")
+```
+
+
+## Sample table
+
+The sample table links subject IDs to the sample IDs that are included in the BAM or CRAM headers. tissue_source is also a required column, but in this case it is unknown.
+
+```{r}
+sample <- sample_ws %>%
+  select(sample_id,
+         subject_id = library_name) %>%
+  mutate(tissue_source="Unknown")
+```
+
+
+## Sequencing alignment table
+
+This table lists BAM or CRAM files associated with each sample. In this case, the cram and index file paths are in the sample table, but the md5sum (a required field in the PRIMED data model) is in the participant table.
+
+```{r}
+sequencing_alignment <- participant %>%
+  left_join(sample_ws, by=c(participant_id="sample_id")) %>%
+  select(sample_id = participant_id,
+         file_path = cram,
+         md5sum = MD5SUM) %>%
+  mutate(index_file_path = sub(".cram$", ".crai", file_path))
+```
+
+## Write tables as files to workspace bucket
+
+To check the tables using a workflow, they must be written as files to the workspace bucket.
+
+```{r}
+bucket <- avstorage()
+
+table_names <- c("subject",
+                 "sample",
+                 "sequencing_alignment")
+for (t in table_names) {
+  outfile <- paste0("1000G_", t, "_table.tsv")
+  write_tsv(get(t), outfile)
+  avcopy(outfile, bucket)
+}
+```
+
+## Check tables against data model
+
+Once all tables have been created, we can check that they conform to the data model and that the md5sums match the files in cloud storage. This is most easily accomplished by providing the paths to the tables in TSV format as input to the `validate_genotype_model` workflow.
