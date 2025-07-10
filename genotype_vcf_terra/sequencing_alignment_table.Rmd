@@ -1,9 +1,9 @@
 ---
-title: "Creating a sequencing alignment table"
+title: "Creating a sequencing sample table"
 output: html_notebook
 ---
 
-This notebook illustrates how to create a sequencing_alignment table in the PRIMED data model.
+This notebook illustrates how to create a sequencing_sample table in the PRIMED data model.
 
 First, we load needed R libraries.
 
@@ -74,7 +74,7 @@ sequencing_sample <- sequencing_sample %>%
   left_join(select(sample_ws, sample_id, gvcf_file_path = gVCF, gvcf_index_file_path = gVCF_TBI))
 ```
 
-Since md5sums are not provided for these files, we will need to retrieve them from the google cloud metadata. We select only the first five rows an an example so the code runs faster.
+Since md5sums are not provided for these files, we will need to retrieve them from the google cloud metadata. We select only the first five rows as an example so the code runs faster.
  
 ```{r}
 md5 <- function(f) {
