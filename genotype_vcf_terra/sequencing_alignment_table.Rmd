@@ -52,19 +52,47 @@ sample <- sample_ws %>%
 ```
 
 
-## Sequencing alignment table
+## Sequencing sample table
 
 This table lists BAM or CRAM files associated with each sample. In this case, the cram and index file paths are in the sample table, but the md5sum (a required field in the PRIMED data model) is in the participant table.
 
+
 ```{r}
-sequencing_alignment <- participant %>%
-  left_join(sample_ws, by=c(participant_id="sample_id")) %>%
-  select(sample_id = participant_id,
-         file_path = cram,
-         md5sum = MD5SUM) %>%
-  mutate(index_file_path = sub(".cram$", ".crai", file_path))
+sequencing_sample <- sample_ws %>%
+  left_join(participant, by=c("sample_id"="participant_id")) %>%
+  select(sample_id,
+         cram_file_path = cram,
+         cram_md5sum = MD5SUM) %>%
+  mutate(cram_index_file_path = sub(".cram$", ".crai", cram_file_path))
 ```
 
+
+If additional single-sample files are available (gVCF or single-sample VCF), they may be included in this table as well.
+
+```{r}
+sequencing_sample <- sequencing_sample %>%
+  left_join(select(sample_ws, sample_id, gvcf_file_path = gVCF, gvcf_index_file_path = gVCF_TBI))
+```
+
+Since md5sums are not provided for these files, we will need to retrieve them from the google cloud metadata. We select only the first five rows an an example so the code runs faster.
+ 
+```{r}
+md5 <- function(f) {
+  AnVILGCP::gsutil_stat(f) %>%
+    select(`Hash (md5)`) %>%
+    unlist() %>%
+    writeLines("md5_b64.txt")
+  system("python3 -c \"import base64; import binascii; print(binascii.hexlify(base64.urlsafe_b64decode(open('md5_b64.txt').read())))\" | cut -d \"'\" -f 2 > md5_hex.txt")
+  hex <- readLines("md5_hex.txt")
+  file.remove(c("md5_hex.txt", "md5_b64.txt"))
+  return(hex)
+}
+
+sequencing_sample <- sequencing_sample[1:5,] %>%
+  rowwise() %>%
+  mutate(gvcf_md5sum = md5(gvcf_file_path))
+```
+ 
 ## Write tables as files to workspace bucket
 
 To check the tables using a workflow, they must be written as files to the workspace bucket.
@@ -74,7 +102,7 @@ bucket <- avstorage()
 
 table_names <- c("subject",
                  "sample",
-                 "sequencing_alignment")
+                 "sequencing_sample")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
   write_tsv(get(t), outfile)
