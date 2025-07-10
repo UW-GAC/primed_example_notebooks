@@ -9,7 +9,7 @@ title: PRIMED example notebooks
     * [example workflow inputs](https://github.com/UW-GAC/primed_example_notebooks/tree/main/genotype_plink/workflows)
 * [Phenotypes and genotypes](genotype_vcf_terra/terra_workspace.nb.html)
     * [example workflow inputs](https://github.com/UW-GAC/primed_example_notebooks/tree/main/genotype_vcf_terra/workflows)
-* [Sequencing alignment table](genotype_vcf_terra/sequencing_alignment_table.nb.html)
+* [Sequencing sample table](genotype_vcf_terra/sequencing_sample_table.nb.html)
 * [Genomic summary results](gsr/gsr.nb.html)
     * [example workflow inputs](https://github.com/UW-GAC/primed_example_notebooks/tree/main/gsr/workflows)
     
