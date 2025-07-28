@@ -1,9 +1,9 @@
 ---
-title: "Creating a sequencing sample table"
+title: "Creating a sequencing sample_file table"
 output: html_notebook
 ---
 
-This notebook illustrates how to create a sequencing_sample table in the PRIMED data model.
+This notebook illustrates how to create a sequencing_sample_file table in the PRIMED data model.
 
 First, we load needed R libraries.
 
@@ -12,6 +12,7 @@ First, we load needed R libraries.
 library(AnVIL)
 library(dplyr)
 library(readr)
+library(tidyr)
 ```
 
 We are using high-coverage 1000 Genomes data as an example, so we read in the necessary data tables from the public AnVIL workspace.
@@ -52,26 +53,27 @@ sample <- sample_ws %>%
 ```
 
 
-## Sequencing sample table
+## Sequencing sample file table
 
-This table lists BAM or CRAM files associated with each sample. In this case, the cram and index file paths are in the sample table, but the md5sum (a required field in the PRIMED data model) is in the participant table.
+This table lists BAM, CRAM, VCF or gVCF files associated with a single sample. In this case, the cram and index file paths are in the sample table, but the md5sum (a required field in the PRIMED data model) is in the participant table.
 
 
 ```{r}
-sequencing_sample <- sample_ws %>%
+sequencing_sample_file <- sample_ws %>%
   left_join(participant, by=c("sample_id"="participant_id")) %>%
   select(sample_id,
-         cram_file_path = cram,
-         cram_md5sum = MD5SUM) %>%
-  mutate(cram_index_file_path = sub(".cram$", ".crai", cram_file_path))
+         file_path = cram,
+         md5sum = MD5SUM) %>%
+  mutate(file_type = "CRAM")
 ```
 
 
 If additional single-sample files are available (gVCF or single-sample VCF), they may be included in this table as well.
 
 ```{r}
-sequencing_sample <- sequencing_sample %>%
-  left_join(select(sample_ws, sample_id, gvcf_file_path = gVCF, gvcf_index_file_path = gVCF_TBI))
+gvcf <- sample_ws %>%
+  select(sample_id, gVCF, `gVCF index` = gVCF_TBI) %>%
+  pivot_longer(starts_with("gVCF"), names_to="file_type", values_to="file_path")
 ```
 
 Since md5sums are not provided for these files, we will need to retrieve them from the google cloud metadata. We select only the first five rows as an example so the code runs faster.
@@ -88,10 +90,16 @@ md5 <- function(f) {
   return(hex)
 }
 
-sequencing_sample <- sequencing_sample[1:5,] %>%
+gvcf <- gvcf[1:5,] %>%
   rowwise() %>%
-  mutate(gvcf_md5sum = md5(gvcf_file_path))
+  mutate(md5sum = md5(file_path))
 ```
+ 
+```{r}
+sequencing_sample_file <- sequencing_sample_file %>%
+  bind_rows(gvcf)
+```
+
  
 ## Write tables as files to workspace bucket
 
@@ -102,7 +110,7 @@ bucket <- avstorage()
 
 table_names <- c("subject",
                  "sample",
-                 "sequencing_sample")
+                 "sequencing_sample_file")
 for (t in table_names) {
   outfile <- paste0("1000G_", t, "_table.tsv")
   write_tsv(get(t), outfile)
