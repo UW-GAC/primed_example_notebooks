@@ -1,5 +1,5 @@
 ---
-title: "Creating a sequencing sample_file table"
+title: "Creating a sequencing_sample_file table"
 output: html_notebook
 ---
 
