@@ -18,12 +18,12 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters) {
   rm(covariates)
   
   res <- list()
-  res[["all"]] <- make_sumstats(x=cov_scores[,-1], y=trait[,-1])
+  res[["all"]] <- make_sumstats_V2(x=as.matrix(cov_scores[,-1]), y=unlist(trait[,-1]))
   
   cluster_names <- unique(clusters[[2]])
   for (c in cluster_names) {
     index <- which(clusters[[2]] %in% c)
-    res[[paste0("cluster", c)]] <- make_sumstats(x=cov_scores[index,-1], y=trait[index,-1])
+    res[[paste0("cluster", c)]] <- make_sumstats_V2(x=as.matrix(cov_scores[index,-1]), y=unlist(trait[index,-1]))
   }
   
   return(res)
