@@ -13,7 +13,8 @@ clusters <- read_tsv(paste0(cohort, "_cluster_definitions.tsv"))
 
 make_sumstats_clusters(trait, covariates, scores, clusters, trait_name="WBC", cohort_name=cohort)
 avcopy(list.files(pattern="_sumstats.rds$"), avstorage())
-sumst <- readRDS("WBC_ARIC_sumstats.rds")
+
+sumst <- readRDS(paste0("WBC_", cohort, "_sumstats.rds"))
 dim(sumst$xx)
 head(sumst$xy)
 attr(sumst, "nsubj")
