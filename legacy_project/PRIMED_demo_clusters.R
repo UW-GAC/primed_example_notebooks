@@ -19,7 +19,7 @@ clusters <- read_tsv(paste0(cohort, "_cluster_definitions.tsv"))
 make_sumstats_clusters(trait, covariates, scores, clusters, analysis_name=analysis_name, cohort_name=cohort)
 
 # check
-sumst <- readRDS(paste(trait_name, cohort, "sumstats.rds", sep="_"))
+sumst <- readRDS(paste(analysis_name, cohort, "sumstats.rds", sep="_"))
 str(sumst)
 
 # copy files to google bucket
