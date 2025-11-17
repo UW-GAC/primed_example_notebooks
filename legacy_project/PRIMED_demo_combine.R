@@ -39,7 +39,10 @@ for (clust in clusters) {
   # remove AoU scores
   sumst_comb$sumstats <- drop_cols_sumstats(sumst_comb$sumstats, aou_scores)
   
-  print(length(sumst_comb$incomplete_cols))
+  # check that we are not missing any covariates
+  stopifnot(all(str_detect(sumst_comb$incomplete_cols, "^PGS")))
+  print(paste("number of incomplete PRS:", length(sumst_comb$incomplete_cols)))
+  
   print(str(sumst_comb$sumstats))
   outfile <- file.path(data_dir, paste(this_trait, clust, date_str, "sumstats.rds", sep="_"))
   saveRDS(sumst_comb, outfile)
