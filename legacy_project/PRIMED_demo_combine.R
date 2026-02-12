@@ -8,7 +8,7 @@ this_trait <- "CAD_subcovar"
 sumst_tbl <- avtable("sumstats") %>%
   filter(analysis == this_trait)
 
-keep_scores <- readLines("harmonized_scores_noAoU_noexcl.txt")
+drop_scores <- readLines("drop_scores_AoU_excl.txt")
 
 dest_bucket <- file.path(avstorage(), "pgs_sumstats/")
 data_dir <- "~/pgs_sumstats"
@@ -38,14 +38,15 @@ for (clust in clusters) {
   sumst_comb <- combine_sumstats(sumst_list)
   
   # remove AoU and excluded scores
-  cols_to_drop <- setdiff(colnames(sumst_comb$sumstats$xx), keep_scores)
-  sumst_comb$sumstats <- drop_cols_sumstats(sumst_comb$sumstats, cols_to_drop)
+  sumst_comb$sumstats <- drop_cols_sumstats(sumst_comb$sumstats, drop_scores)
   
   # check that we are not missing any covariates
   stopifnot(all(str_detect(sumst_comb$incomplete_cols, "^PGS")))
   print(paste("number of incomplete PRS:", length(sumst_comb$incomplete_cols)))
   
   print(str(sumst_comb$sumstats))
+  print(head(colnames(sumst_comb$sumstats$xx)))
+  print(tail(colnames(sumst_comb$sumstats$xx)))
   outfile <- file.path(data_dir, paste(this_trait, clust, date_str, "sumstats.rds", sep="_"))
   saveRDS(sumst_comb, outfile)
   avcopy(outfile, dest_bucket)
