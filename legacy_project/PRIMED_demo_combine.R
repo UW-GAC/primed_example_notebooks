@@ -14,7 +14,6 @@ dest_bucket <- file.path(avstorage(), "pgs_sumstats/")
 data_dir <- "~/pgs_sumstats"
 date_str <- format(Sys.Date(), "%Y%m%d")
 clusters <- unique(sumst_tbl$cluster)
-#clusters <- "all"
 
 tbl_list <- list()
 for (clust in clusters) {
@@ -39,6 +38,8 @@ for (clust in clusters) {
   
   # remove AoU and excluded scores
   sumst_comb$sumstats <- drop_cols_sumstats(sumst_comb$sumstats, drop_scores)
+  sumst_comb$beta_multiplier <- sumst_comb$beta_multiplier[colnames(sumst_comb$sumstats$xx)]
+  stopifnot(all(colnames(sumst_comb$sumstats$xx) == names(sumst_comb$beta_multiplier)))
   
   # check that we are not missing any covariates
   stopifnot(all(str_detect(sumst_comb$incomplete_cols, "^PGS")))
