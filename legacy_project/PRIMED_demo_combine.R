@@ -8,8 +8,8 @@ this_trait <- "TG"
 validation <- "GeneSTAR"
 drop_cohorts <- c("eMERGE-Geisinger", "eMERGE-KPWUW", "eMERGE-MountSinai")
 
-if (adjusted) id_str <- "analysis_adjusted_id" else file_str <- "analysis_unadjusted_id"
-if (adjusted) file_str <- "sumstats_adjusted" else file_str <- "sumstats_unadjusted"
+id_str <- if (adjusted) "analysis_adjusted_id" else "analysis_unadjusted_id"
+file_str <- if (adjusted) "sumstats_adjusted" else "sumstats_unadjusted"
 
 sumst_tbl <- avtable(file_str) %>%
   filter(analysis == this_trait) %>%
