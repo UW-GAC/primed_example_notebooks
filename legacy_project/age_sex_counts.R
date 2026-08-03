@@ -1,9 +1,6 @@
 library(dplyr)
 library(readr)
 
-trait <- read_tsv("ARIC_T2D_trait.tsv")
-covs <- read_tsv("ARIC_T2D_covariates.tsv")
-
 age_cat_fn <- function(age) {
   cut(age,
       breaks = c(-Inf, 25, seq(30, 75, by = 5), Inf),
@@ -27,6 +24,11 @@ age_cat_fn <- function(age) {
   )
 }
 
+
+# binary outcome
+trait <- read_tsv("ARIC_T2D_trait.tsv")
+covs <- read_tsv("ARIC_T2D_covariates.tsv")
+
 tbl <- trait %>%
   left_join(covs) %>%
   mutate(age_cat = age_cat_fn(age)) %>%
@@ -34,3 +36,16 @@ tbl <- trait %>%
   count(age_cat, T2D, sex, .drop=FALSE)
 
 write_tsv(tbl, "ARIC_T2D_age_sex_counts.tsv")
+
+
+# quantitative outcome
+trait <- read_tsv("ARIC_WBC_trait.tsv")
+covs <- read_tsv("ARIC_WBC_covariates.tsv")
+
+tbl <- trait %>%
+  left_join(covs) %>%
+  mutate(age_cat = age_cat_fn(age)) %>%
+  mutate(sex=as.factor(sex)) %>%
+  count(age_cat, sex, .drop=FALSE)
+
+write_tsv(tbl, "ARIC_WBC_age_sex_counts.tsv")
